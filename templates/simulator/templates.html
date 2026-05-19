@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% block title %}Attack Templates | ESEAS{% endblock %}
+{% block page_title %}Email Templates{% endblock %}
+
+{% block extra_head %}
+<style>
+.tmpl-row { cursor: pointer; }
+.tmpl-row:hover td { background: rgba(255,107,53,.04); }
+.tmpl-row td { transition: background .12s; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+      <div>
+        <h2 class="fw-bold mb-0" style="color:var(--navy)">
+          <i class="fa-solid fa-file-code me-2" style="color:var(--orange)"></i>Attack Templates
+        </h2>
+        <p class="text-muted small mb-0">Reusable phishing email templates used in simulation campaigns.</p>
+      </div>
+      <a href="{{ url_for('simulator.new_template') }}" class="btn btn-orange btn-sm">
+        <i class="fa-solid fa-plus me-1"></i>New Template
+      </a>
+    </div>
+
+    <!-- Templates table -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-0">
+        {% if templates %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead style="background:var(--navy); color:#fff;">
+              <tr>
+                <th class="ps-4 py-3">Template Name</th>
+                <th>Attack Type</th>
+                <th>Fake Page</th>
+                <th>Difficulty</th>
+                <th>Created</th>
+                <th class="text-center pe-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for tmpl in templates %}
+              <tr id="tmpl-{{ tmpl.id }}" class="tmpl-row" data-tid="{{ tmpl.id }}" title="Click to preview">
+                <td class="ps-4">
+                  <div class="fw-semibold small">{{ tmpl.name }}</div>
+                  {% if tmpl.description %}
+                  <div class="text-muted" style="font-size:.75rem;">
+                    {{ tmpl.description[:70] }}{% if tmpl.description|length > 70 %}…{% endif %}
+                  </div>
+                  {% endif %}
+                  <div class="text-muted" style="font-size:.75rem; font-style:italic;">
+                    {{ tmpl.subject }}
+                  </div>
+                </td>
+                <td>
+                  <span class="badge bg-{{ tmpl.attack_type_color }}">
+                    <i class="fa-solid {{ tmpl.attack_type_icon }} me-1"></i>{{ tmpl.attack_type_label }}
+                  </span>
+                </td>
+                <td class="small text-muted">
+                  {% if tmpl.fake_page_type == 'it_login' %}IT Portal
+                  {% elif tmpl.fake_page_type == 'bank_login' %}Bank Login
+                  {% elif tmpl.fake_page_type == 'prize_claim' %}Prize Claim
+                  {% else %}{{ tmpl.fake_page_type }}{% endif %}
+                </td>
+                <td>
+                  <span class="text-warning" title="Difficulty {{ tmpl.difficulty_level }}/5">
+                    {{ tmpl.difficulty_stars }}
+                  </span>
+                </td>
+                <td class="small text-muted text-nowrap">
+                  {{ tmpl.created_at.strftime('%d %b %Y') }}
+                </td>
+                <td class="text-center pe-4">
+                  <div class="d-flex gap-1 justify-content-center">
+                    <a href="{{ url_for('simulator.preview_template', tid=tmpl.id) }}"
+                       class="btn btn-sm btn-outline-secondary" title="Preview">
+                      <i class="fa-solid fa-eye"></i>
+                    </a>
+                    <a href="{{ url_for('simulator.edit_template', tid=tmpl.id) }}"
+                       class="btn btn-sm btn-outline-primary" title="Edit">
+                      <i class="fa-solid fa-pen"></i>
+                    </a>
+                    <button class="btn btn-sm btn-outline-danger del-tmpl-btn"
+                            data-id="{{ tmpl.id }}" title="Delete">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-5">
+          <i class="fa-solid fa-file-code fa-3x mb-3 d-block opacity-25"></i>
+          <p class="mb-2">No templates yet.</p>
+          <a href="{{ url_for('simulator.new_template') }}" class="btn btn-orange btn-sm">
+            <i class="fa-solid fa-plus me-1"></i>Create Your First Template
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="mt-3">
+      <a href="{{ url_for('simulator.index') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="fa-solid fa-arrow-left me-1"></i>Back to Simulator
+      </a>
+    </div>
+
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Delete buttons
+document.querySelectorAll('.del-tmpl-btn').forEach(btn => {
+  btn.addEventListener('click', async e => {
+    e.stopPropagation();
+    if (!confirm('Delete this template? Campaigns using it will keep their records.')) return;
+    const id   = btn.dataset.id;
+    const resp = await fetch(`/simulator/templates/${id}`, { method: 'DELETE' });
+    const data = await resp.json();
+    if (resp.ok) {
+      document.getElementById(`tmpl-${id}`)?.remove();
+    } else {
+      alert(data.error || 'Could not delete template.');
+    }
+  });
+});
+
+// Clicking a row opens the full preview page immediately
+document.querySelectorAll('.tmpl-row').forEach(row => {
+  row.addEventListener('click', e => {
+    if (e.target.closest('.btn, a, button')) return;
+    window.location.href = `/simulator/templates/${row.dataset.tid}/preview`;
+  });
+});
+</script>
+{% endblock %}

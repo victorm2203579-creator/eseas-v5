@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}{{ mod.title }} | ESEAS{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container" style="max-width:800px;">
+
+    <!-- Nav -->
+    <div class="d-flex gap-2 mb-4">
+      <a href="{{ url_for('training.index') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="fa-solid fa-arrow-left me-1"></i>Back to Modules
+      </a>
+    </div>
+
+    <!-- Module header -->
+    <div class="card border-0 shadow-sm mb-4 border-start border-5" style="border-color:var(--orange) !important;">
+      <div class="card-body p-4">
+        <div class="d-flex align-items-center gap-3 mb-2">
+          <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+               style="width:56px;height:56px;background:rgba(255,107,53,.12);">
+            <i class="fa-solid {{ mod.icon }}" style="color:var(--orange);font-size:1.4rem;"></i>
+          </div>
+          <div>
+            <div class="d-flex gap-2 mb-1">
+              <span class="badge bg-{{ mod.level_color }}-subtle text-{{ mod.level_color }} border border-{{ mod.level_color }}">
+                {{ mod.level }}
+              </span>
+              <span class="badge bg-light text-muted border">
+                <i class="fa-regular fa-clock me-1"></i>{{ mod.duration }}
+              </span>
+              {% if progress %}
+              <span class="badge bg-success">
+                <i class="fa-solid fa-circle-check me-1"></i>Completed — {{ progress.score }}%
+              </span>
+              {% endif %}
+            </div>
+            <h4 class="fw-bold mb-0" style="color:var(--navy)">{{ mod.title }}</h4>
+          </div>
+        </div>
+        <p class="text-muted small mb-0">{{ mod.description }}</p>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body p-4" style="line-height:1.8;">
+        {{ mod.content|safe }}
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="card border-0 shadow-sm bg-light">
+      <div class="card-body p-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+          <h6 class="fw-bold mb-1" style="color:var(--navy)">Ready to test your knowledge?</h6>
+          <p class="text-muted small mb-0">
+            Complete the quiz to earn your completion badge.
+            {% if progress %}You previously scored <strong>{{ progress.score }}%</strong>.{% endif %}
+          </p>
+        </div>
+        <a href="{{ url_for('training.quiz', module_id=mod.id) }}" class="btn btn-orange">
+          <i class="fa-solid fa-clipboard-question me-1"></i>
+          {% if progress %}Retake Quiz{% else %}Take Quiz{% endif %}
+        </a>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

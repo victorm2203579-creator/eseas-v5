@@ -1,0 +1,330 @@
+{% extends 'base.html' %}
+{% block title %}My Dashboard | ESEAS{% endblock %}
+{% block page_title %}My Dashboard{% endblock %}
+
+{% block extra_head %}
+<style>
+.stat-card       { border-top: 3px solid var(--orange); transition: transform .15s; }
+.stat-card:hover { transform: translateY(-3px); }
+.gauge-wrap  { position:relative; width:200px; height:118px; margin:0 auto; }
+.gauge-svg   { width:200px; height:118px; }
+.gauge-bg    { fill:none; stroke:#e9ecef; stroke-width:16; stroke-linecap:round; }
+.gauge-arc   { fill:none; stroke-width:16; stroke-linecap:round; }
+.gauge-score { position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+               text-align:center; line-height:1; }
+.gauge-num   { font-size:2rem; font-weight:800; }
+.module-row  { transition: background .15s; }
+.module-row:hover { background: #f8f9fa; }
+.badge-card  { transition: transform .2s; }
+.badge-card:hover { transform: translateY(-3px); }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+      <div>
+        <h2 class="fw-bold mb-0" style="color:var(--navy)">
+          <i class="fa-solid fa-user-shield me-2" style="color:var(--orange)"></i>
+          Welcome back, {{ current_user.name.split()[0] }}!
+        </h2>
+        <p class="text-muted small mb-0">Your personal security overview</p>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="{{ url_for('analyzer.index') }}" class="btn btn-orange btn-sm">
+          <i class="fa-solid fa-magnifying-glass me-1"></i>Scan a URL
+        </a>
+        <a href="{{ url_for('training.index') }}" class="btn btn-sm btn-outline-secondary">
+          <i class="fa-solid fa-graduation-cap me-1"></i>Training
+        </a>
+      </div>
+    </div>
+
+    <!-- Mandatory training alert -->
+    {% if mandatory_pending > 0 %}
+    <div class="alert d-flex align-items-center gap-3 mb-4 border-0 rounded-3"
+         style="background:rgba(255,107,53,.12);border-left:4px solid var(--orange) !important;">
+      <i class="fa-solid fa-triangle-exclamation fa-lg flex-shrink-0" style="color:var(--orange)"></i>
+      <div>
+        <strong style="color:var(--navy)">{{ mandatory_pending }} mandatory training assignment{{ 's' if mandatory_pending != 1 else '' }} pending.</strong>
+        <span class="text-muted ms-1">Complete them as soon as possible.</span>
+        <a href="{{ url_for('training.index') }}" class="ms-2 fw-semibold" style="color:var(--orange);">
+          Go to Training →
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Row 1: Stat cards -->
+    <div class="row g-3 mb-4">
+
+      <!-- Risk Score -->
+      {% set risk_border = '#dc3545' if risk_color == 'danger' else ('#fd7e14' if risk_color == 'warning' else '#198754') %}
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100 text-center p-3"
+             style="border-top: 3px solid {{ risk_border }} !important;">
+          <h3 class="fw-bold mb-0 text-{{ risk_color }}">{{ risk_score|int }}</h3>
+          <p class="text-muted small mb-1">My Risk Score</p>
+          <span class="badge bg-{{ risk_color }} px-2">
+            {% if risk_color == 'danger' %}High Risk
+            {% elif risk_color == 'warning' %}Moderate Risk
+            {% else %}Low Risk{% endif %}
+          </span>
+        </div>
+      </div>
+
+      <!-- URLs Scanned -->
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100 text-center p-3 stat-card">
+          <i class="fa-solid fa-link fa-2x mb-2" style="color:var(--orange)"></i>
+          <h3 class="fw-bold mb-0" style="color:var(--navy)">{{ my_scans }}</h3>
+          <p class="text-muted small mb-0">URLs I've Scanned</p>
+        </div>
+      </div>
+
+      <!-- Training -->
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100 text-center p-3" style="border-top:3px solid #198754 !important;">
+          <i class="fa-solid fa-graduation-cap fa-2x mb-2 text-success"></i>
+          <h3 class="fw-bold mb-0 text-success">{{ training_percent }}%</h3>
+          <p class="text-muted small mb-1">Training Completed</p>
+          <div class="progress mx-2" style="height:5px;">
+            <div class="progress-bar bg-success" style="width:{{ training_percent }}%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Badges -->
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100 text-center p-3" style="border-top:3px solid #ffc107 !important;">
+          <i class="fa-solid fa-trophy fa-2x mb-2 text-warning"></i>
+          <h3 class="fw-bold mb-0" style="color:var(--navy)">{{ badges|length }}</h3>
+          <p class="text-muted small mb-0">Badges Earned</p>
+        </div>
+      </div>
+
+    </div><!-- /row 1 -->
+
+    <!-- Row 2: Gauge + Module progress -->
+    <div class="row g-4 mb-4">
+
+      <!-- Risk gauge -->
+      <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header py-3" style="background:var(--navy);">
+            <h6 class="text-white mb-0 fw-semibold">
+              <i class="fa-solid fa-shield-halved me-2" style="color:var(--orange)"></i>Risk Score Gauge
+            </h6>
+          </div>
+          <div class="card-body d-flex flex-column align-items-center justify-content-center py-4">
+            {% set arc_len = 235.6 %}
+            {% set rs = risk_score if risk_score else 0 %}
+            {% set offset = arc_len - (rs / 100) * arc_len %}
+            {% set arc_color = '#dc3545' if risk_color == 'danger' else ('#fd7e14' if risk_color == 'warning' else '#198754') %}
+            <div class="gauge-wrap mb-3">
+              <svg class="gauge-svg" viewBox="0 0 200 118">
+                <path class="gauge-bg"  d="M 25,100 A 75,75 0 0,1 175,100" />
+                <path class="gauge-arc" d="M 25,100 A 75,75 0 0,1 175,100"
+                      stroke="{{ arc_color }}"
+                      stroke-dasharray="{{ arc_len }}"
+                      stroke-dashoffset="{{ offset }}" />
+              </svg>
+              <div class="gauge-score">
+                <div class="gauge-num" style="color:{{ arc_color }};">{{ rs|int }}</div>
+                <div class="small text-muted">/ 100</div>
+              </div>
+            </div>
+            <span class="badge fs-6 px-3 py-2 mb-3 bg-{{ risk_color }}">
+              {% if risk_color == 'danger' %}High Risk
+              {% elif risk_color == 'warning' %}Moderate Risk
+              {% else %}Low Risk{% endif %}
+            </span>
+            <p class="text-muted small text-center mb-0 px-3">
+              Calculated from your simulation activity, reports submitted, and training completed.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Module progress -->
+      <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header py-3 d-flex justify-content-between align-items-center"
+               style="background:var(--navy);">
+            <h6 class="text-white mb-0 fw-semibold">
+              <i class="fa-solid fa-list-check me-2" style="color:var(--orange)"></i>Training Modules Progress
+            </h6>
+            <span class="badge" style="background:rgba(255,255,255,.15);color:#fff;font-size:.72rem;">
+              {{ passed_count }} / {{ total_modules }} passed
+            </span>
+          </div>
+          <div class="card-body p-0">
+            {% for item in module_data %}
+            {% set m = item.module %}
+            {% set p = item.progress %}
+            {% set status = p.status if p else 'not_started' %}
+            <div class="d-flex align-items-center gap-3 px-3 py-2 border-bottom module-row">
+              <!-- Icon -->
+              <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                   style="width:38px;height:38px;background:rgba(10,22,40,.07);">
+                <i class="fa-solid {{ m.icon_class }} small" style="color:var(--navy)"></i>
+              </div>
+              <!-- Info -->
+              <div class="flex-grow-1" style="min-width:0;">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="small fw-semibold text-truncate" style="color:var(--navy);max-width:200px;">{{ m.title }}</span>
+                  {% if status == 'not_started' %}
+                    <span class="badge bg-secondary" style="font-size:.65rem;">Not Started</span>
+                  {% elif status == 'in_progress' %}
+                    <span class="badge bg-primary" style="font-size:.65rem;">In Progress</span>
+                  {% elif status == 'passed' %}
+                    <span class="badge bg-success" style="font-size:.65rem;"><i class="fa-solid fa-check me-1"></i>Passed</span>
+                  {% elif status == 'failed' %}
+                    <span class="badge bg-danger" style="font-size:.65rem;">Failed</span>
+                  {% endif %}
+                </div>
+                <div class="progress" style="height:4px;">
+                  <div class="progress-bar
+                    {% if status == 'passed' %}bg-success
+                    {% elif status == 'in_progress' %}bg-primary
+                    {% elif status == 'failed' %}bg-danger
+                    {% else %}bg-secondary{% endif %}"
+                    style="width:{% if status == 'passed' %}100{% elif status == 'in_progress' %}50{% elif status == 'failed' %}30{% else %}0{% endif %}%">
+                  </div>
+                </div>
+              </div>
+              <!-- Score / action -->
+              <div class="text-end flex-shrink-0" style="min-width:80px;">
+                {% if p and p.quiz_score is not none %}
+                  <div class="small fw-bold {% if p.quiz_passed %}text-success{% else %}text-danger{% endif %}">
+                    {{ p.quiz_score }}/100
+                  </div>
+                {% endif %}
+                {% if status == 'passed' %}
+                  <a href="{{ url_for('training.quiz_result', mid=m.id) }}"
+                     class="btn btn-outline-success btn-sm py-0 px-2" style="font-size:.7rem;">Results</a>
+                {% elif status == 'failed' %}
+                  <a href="{{ url_for('training.quiz', mid=m.id) }}"
+                     class="btn btn-warning btn-sm py-0 px-2" style="font-size:.7rem;">Retake</a>
+                {% else %}
+                  <a href="{{ url_for('training.lesson', mid=m.id) }}"
+                     class="btn btn-orange btn-sm py-0 px-2" style="font-size:.7rem;">
+                    {{ 'Continue' if status == 'in_progress' else 'Start' }}
+                  </a>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+            {% if not module_data %}
+            <div class="text-center text-muted py-5">
+              <i class="fa-solid fa-graduation-cap fa-2x mb-2 d-block opacity-25"></i>
+              No training modules available yet.
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /row 2 -->
+
+    <!-- Row 3: Recent scans + Badges -->
+    <div class="row g-4">
+
+      <!-- Last 5 scans -->
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header py-3 d-flex justify-content-between align-items-center"
+               style="background:var(--navy);">
+            <h6 class="text-white mb-0 fw-semibold">
+              <i class="fa-solid fa-clock-rotate-left me-2" style="color:var(--orange)"></i>My Last Scans
+            </h6>
+            <a href="{{ url_for('analyzer.history') }}" class="btn btn-sm btn-outline-light">View All</a>
+          </div>
+          {% if recent_scans %}
+          <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0">
+              <tbody>
+                {% for s in recent_scans %}
+                <tr>
+                  <td class="ps-3" style="max-width:180px;">
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="rounded-circle flex-shrink-0"
+                            style="width:7px;height:7px;background:{% if s.risk_color == 'danger' %}#dc3545{% elif s.risk_color == 'warning' %}#fd7e14{% else %}#198754{% endif %};display:inline-block;"></span>
+                      <span class="small font-monospace text-truncate" title="{{ s.url }}" style="max-width:150px;">
+                        {{ s.short_url }}
+                      </span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge bg-{{ s.risk_color }}">{{ s.final_label }}</span>
+                  </td>
+                  <td class="small text-muted text-nowrap">{{ s.scanned_at.strftime('%d %b') }}</td>
+                  <td class="pe-3 text-end">
+                    <a href="{{ url_for('analyzer.detail', scan_id=s.id) }}"
+                       class="btn btn-sm btn-outline-secondary">
+                      <i class="fa-solid fa-eye"></i>
+                    </a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="card-body text-center text-muted py-5">
+            <i class="fa-solid fa-magnifying-glass fa-2x mb-3 d-block opacity-25"></i>
+            No scans yet.
+            <a href="{{ url_for('analyzer.index') }}" style="color:var(--orange);">Scan your first URL →</a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Badges -->
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header py-3 d-flex justify-content-between align-items-center"
+               style="background:var(--navy);">
+            <h6 class="text-white mb-0 fw-semibold">
+              <i class="fa-solid fa-trophy me-2" style="color:var(--orange)"></i>My Badges
+            </h6>
+            <a href="{{ url_for('training.badges') }}" class="btn btn-sm btn-outline-light">All Badges</a>
+          </div>
+          <div class="card-body">
+            {% if badges %}
+            <div class="row g-3">
+              {% for b in badges %}
+              <div class="col-6">
+                <div class="card border-0 shadow-sm text-center p-3 badge-card h-100"
+                     style="border-top:2px solid var(--orange) !important;">
+                  <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-2"
+                       style="width:48px;height:48px;background:rgba(255,107,53,.12);">
+                    <i class="fa-solid {{ b.badge_icon }} fa-lg" style="color:var(--orange)"></i>
+                  </div>
+                  <div class="small fw-semibold mb-1" style="color:var(--navy)">{{ b.badge_name }}</div>
+                  <div class="text-muted" style="font-size:.65rem;">{{ b.earned_at.strftime('%d %b %Y') }}</div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center text-muted py-4">
+              <i class="fa-solid fa-trophy fa-2x mb-3 d-block opacity-25"></i>
+              <p class="small mb-2">No badges earned yet.</p>
+              <a href="{{ url_for('training.index') }}" class="btn btn-sm btn-orange">
+                <i class="fa-solid fa-graduation-cap me-1"></i>Start Training
+              </a>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /row 3 -->
+
+  </div>
+</section>
+{% endblock %}

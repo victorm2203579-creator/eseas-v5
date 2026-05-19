@@ -1,0 +1,358 @@
+{% extends 'base.html' %}
+{% block title %}Training Management | ESEAS Admin{% endblock %}
+
+{% block extra_head %}
+<style>
+.tab-pane { animation: fadeIn .2s ease; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+.stat-card { border-top: 3px solid var(--orange) !important; }
+.progress-mini { height:5px; border-radius:3px; }
+.user-row:hover { background: rgba(10,22,40,.03); }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container-fluid px-4">
+
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+      <div>
+        <h2 class="fw-bold mb-0" style="color:var(--navy)">
+          <i class="fa-solid fa-chalkboard-user me-2" style="color:var(--orange)"></i>Training Management
+        </h2>
+        <p class="text-muted small mb-0">Monitor module completion, manage assignments, and add content.</p>
+      </div>
+      <a href="{{ url_for('training_admin.new_module') }}" class="btn btn-orange btn-sm">
+        <i class="fa-solid fa-plus me-1"></i>New Module
+      </a>
+    </div>
+
+    <!-- Summary stat cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm stat-card text-center p-3">
+          <h4 class="fw-bold mb-0" style="color:var(--navy)">{{ module_stats|length }}</h4>
+          <p class="small text-muted mb-0">Active Modules</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm stat-card text-center p-3">
+          <h4 class="fw-bold mb-0 text-success">
+            {{ user_summaries | selectattr('passed', 'equalto', module_stats|length) | list | length }}
+          </h4>
+          <p class="small text-muted mb-0">Users Certified</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm stat-card text-center p-3">
+          <h4 class="fw-bold mb-0 text-warning">{{ pending_assignments|length }}</h4>
+          <p class="small text-muted mb-0">Pending Assignments</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm stat-card text-center p-3">
+          <h4 class="fw-bold mb-0 text-primary">{{ all_users|length }}</h4>
+          <p class="small text-muted mb-0">Active Users</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4" id="mgmtTabs" role="tablist">
+      <li class="nav-item">
+        <button class="nav-link active fw-semibold" id="modules-tab"
+                data-bs-toggle="tab" data-bs-target="#modules-pane" type="button">
+          <i class="fa-solid fa-book-open me-1"></i>Modules
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link fw-semibold" id="progress-tab"
+                data-bs-toggle="tab" data-bs-target="#progress-pane" type="button">
+          <i class="fa-solid fa-users me-1"></i>User Progress
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link fw-semibold" id="assign-tab"
+                data-bs-toggle="tab" data-bs-target="#assign-pane" type="button">
+          <i class="fa-solid fa-clipboard-list me-1"></i>Assignments
+          {% if pending_assignments %}
+          <span class="badge bg-warning text-dark ms-1">{{ pending_assignments|length }}</span>
+          {% endif %}
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content" id="mgmtTabsContent">
+
+      <!-- ── Modules Tab ────────────────────────────────────────────── -->
+      <div class="tab-pane fade show active" id="modules-pane" role="tabpanel">
+        <div class="card border-0 shadow-sm">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead style="background:var(--navy); color:#fff;">
+                <tr>
+                  <th class="py-3 px-4">#</th>
+                  <th>Module</th>
+                  <th>Topic</th>
+                  <th class="text-center">Questions</th>
+                  <th class="text-center">Attempts</th>
+                  <th class="text-center">Pass Rate</th>
+                  <th class="text-end pe-4">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for stat in module_stats %}
+                {% set m = stat.module %}
+                <tr>
+                  <td class="px-4 text-muted small">{{ loop.index }}</td>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                           style="width:36px;height:36px;background:rgba(10,22,40,.07);">
+                        <i class="fa-solid {{ m.icon_class }} small" style="color:var(--navy)"></i>
+                      </div>
+                      <div>
+                        <div class="fw-semibold small" style="color:var(--navy)">{{ m.title }}</div>
+                        <div class="text-muted" style="font-size:.72rem;">{{ m.estimated_minutes }} min</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge bg-{{ m.topic_color }}" style="font-size:.7rem;">{{ m.topic_label }}</span>
+                  </td>
+                  <td class="text-center">
+                    <span class="badge bg-light text-dark border">{{ m.question_count }}</span>
+                  </td>
+                  <td class="text-center small">{{ stat.attempts }}</td>
+                  <td class="text-center" style="min-width:120px;">
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="progress flex-grow-1 progress-mini">
+                        <div class="progress-bar {{ 'bg-success' if stat.pass_rate >= 70 else 'bg-warning' }}"
+                             style="width:{{ stat.pass_rate }}%"></div>
+                      </div>
+                      <span class="small fw-semibold"
+                            style="color:{{ '#198754' if stat.pass_rate >= 70 else '#ffc107' }};min-width:2.5rem;">
+                        {{ stat.pass_rate }}%
+                      </span>
+                    </div>
+                  </td>
+                  <td class="text-end pe-4">
+                    <div class="d-flex justify-content-end gap-1">
+                      <a href="{{ url_for('training_admin.edit_module', mid=m.id) }}"
+                         class="btn btn-sm btn-outline-secondary" title="Edit">
+                        <i class="fa-solid fa-pencil"></i>
+                      </a>
+                      <a href="{{ url_for('training_admin.module_questions', mid=m.id) }}"
+                         class="btn btn-sm btn-outline-primary" title="Questions">
+                        <i class="fa-solid fa-question"></i>
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" class="text-center text-muted py-4">No modules yet.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── User Progress Tab ──────────────────────────────────────── -->
+      <div class="tab-pane fade" id="progress-pane" role="tabpanel">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <span class="fw-semibold" style="color:var(--navy);">
+              <i class="fa-solid fa-users me-1"></i>{{ user_summaries|length }} active users
+            </span>
+            <a href="{{ url_for('training_admin.training_management') }}?export=csv"
+               class="btn btn-sm btn-outline-secondary">
+              <i class="fa-solid fa-download me-1"></i>Export CSV
+            </a>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead style="background:#f8f9fa;">
+                <tr>
+                  <th class="px-4 py-3">User</th>
+                  <th class="text-center">Progress</th>
+                  <th class="text-center">Avg Score</th>
+                  <th class="text-center">Badges</th>
+                  <th class="text-center">Pending</th>
+                  <th>Last Active</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for s in user_summaries %}
+                <tr class="user-row">
+                  <td class="px-4">
+                    <div class="fw-semibold small" style="color:var(--navy)">{{ s.user.name }}</div>
+                    <div class="text-muted" style="font-size:.72rem;">{{ s.user.email }}</div>
+                  </td>
+                  <td class="text-center" style="min-width:130px;">
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="progress flex-grow-1 progress-mini">
+                        <div class="progress-bar {{ 'bg-success' if s.passed == s.total else 'bg-primary' }}"
+                             style="width:{{ (s.passed / s.total * 100) | round if s.total else 0 }}%"></div>
+                      </div>
+                      <span class="small fw-semibold" style="color:var(--navy);min-width:2rem;">
+                        {{ s.passed }}/{{ s.total }}
+                      </span>
+                    </div>
+                  </td>
+                  <td class="text-center">
+                    {% if s.avg_score is not none %}
+                    <span class="badge {{ 'bg-success' if s.avg_score >= 70 else 'bg-warning text-dark' }}">
+                      {{ s.avg_score }}%
+                    </span>
+                    {% else %}
+                    <span class="text-muted small">—</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-center">
+                    <span class="badge bg-light text-dark border">
+                      <i class="fa-solid fa-trophy text-warning me-1"></i>{{ s.badge_count }}
+                    </span>
+                  </td>
+                  <td class="text-center">
+                    {% if s.pending_assign > 0 %}
+                    <span class="badge bg-warning text-dark">{{ s.pending_assign }}</span>
+                    {% else %}
+                    <span class="text-muted small">—</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-muted small">
+                    {{ s.last_active.strftime('%d %b %Y') if s.last_active else 'Never' }}
+                  </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-center text-muted py-4">No users found.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Assignments Tab ────────────────────────────────────────── -->
+      <div class="tab-pane fade" id="assign-pane" role="tabpanel">
+        <div class="row g-4">
+
+          <!-- Pending assignments list -->
+          <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header py-3">
+                <span class="fw-semibold" style="color:var(--navy)">
+                  <i class="fa-solid fa-clock me-1"></i>Pending Assignments (last 20)
+                </span>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                  <thead style="background:#f8f9fa;">
+                    <tr>
+                      <th class="px-4 py-3">User</th>
+                      <th>Module</th>
+                      <th>Reason</th>
+                      <th>Assigned</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for a in pending_assignments %}
+                    <tr>
+                      <td class="px-4">
+                        <div class="small fw-semibold" style="color:var(--navy)">{{ a.user.name }}</div>
+                        <div class="text-muted" style="font-size:.72rem;">{{ a.user.email }}</div>
+                      </td>
+                      <td class="small">{{ a.module.title }}</td>
+                      <td>
+                        <span class="badge bg-{{ a.reason_color }}" style="font-size:.7rem;">
+                          {{ a.reason_label }}
+                        </span>
+                      </td>
+                      <td class="text-muted small">{{ a.assigned_at.strftime('%d %b %Y') }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                      <td colspan="4" class="text-center text-muted py-4">
+                        <i class="fa-solid fa-check-circle text-success me-2"></i>
+                        No pending assignments.
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Manual assign form -->
+          <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header py-3">
+                <span class="fw-semibold" style="color:var(--navy)">
+                  <i class="fa-solid fa-plus me-1" style="color:var(--orange)"></i>Manually Assign
+                </span>
+              </div>
+              <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('training_admin.assign_training') }}">
+                  <div class="mb-3">
+                    <label class="form-label small fw-semibold">Users</label>
+                    <div style="max-height:180px;overflow-y:auto;border:1px solid #dee2e6;border-radius:.375rem;padding:.5rem;">
+                      {% for u in all_users %}
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox"
+                               name="user_ids" value="{{ u.id }}" id="u{{ u.id }}">
+                        <label class="form-check-label small" for="u{{ u.id }}">{{ u.name }}</label>
+                      </div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label small fw-semibold">Modules</label>
+                    <div style="max-height:160px;overflow-y:auto;border:1px solid #dee2e6;border-radius:.375rem;padding:.5rem;">
+                      {% for stat in module_stats %}
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox"
+                               name="module_ids" value="{{ stat.module.id }}" id="m{{ stat.module.id }}">
+                        <label class="form-check-label small" for="m{{ stat.module.id }}">
+                          {{ stat.module.title }}
+                        </label>
+                      </div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label small fw-semibold">Reason</label>
+                    <select name="reason" class="form-select form-select-sm">
+                      <option value="manual">Manually assigned by admin</option>
+                      <option value="campaign_click">Clicked simulation link</option>
+                      <option value="credential_entry">Entered fake credentials</option>
+                    </select>
+                  </div>
+                  <button type="submit" class="btn btn-orange btn-sm w-100">
+                    <i class="fa-solid fa-paper-plane me-1"></i>Assign Training
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Activate tab from URL hash
+const hash = window.location.hash;
+if (hash) {
+  const tabEl = document.querySelector(`[data-bs-target="${hash}-pane"]`);
+  if (tabEl) bootstrap.Tab.getOrCreateInstance(tabEl).show();
+}
+</script>
+{% endblock %}

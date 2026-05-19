@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block title %}Preview: {{ tmpl.name }} | ESEAS{% endblock %}
+{% block page_title %}Template Preview{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container" style="max-width:860px;">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <a href="{{ url_for('simulator.templates') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="fa-solid fa-arrow-left me-1"></i>Back to Templates
+      </a>
+      <a href="{{ url_for('simulator.edit_template', tid=tmpl.id) }}" class="btn btn-sm btn-outline-primary">
+        <i class="fa-solid fa-pen me-1"></i>Edit Template
+      </a>
+    </div>
+
+    <!-- Template metadata -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header py-3" style="background:var(--navy);">
+        <h5 class="text-white mb-0 fw-semibold">
+          <i class="fa-solid fa-eye me-2" style="color:var(--orange)"></i>{{ tmpl.name }}
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-sm-6 col-md-3">
+            <div class="small text-muted mb-1">Attack Type</div>
+            <span class="badge bg-{{ tmpl.attack_type_color }}">
+              <i class="fa-solid {{ tmpl.attack_type_icon }} me-1"></i>{{ tmpl.attack_type_label }}
+            </span>
+          </div>
+          <div class="col-sm-6 col-md-3">
+            <div class="small text-muted mb-1">Difficulty</div>
+            <span class="text-warning">{{ tmpl.difficulty_stars }}</span>
+          </div>
+          <div class="col-sm-6 col-md-3">
+            <div class="small text-muted mb-1">Fake Landing Page</div>
+            <span class="small fw-semibold">
+              {% if tmpl.fake_page_type == 'it_login' %}IT Portal
+              {% elif tmpl.fake_page_type == 'bank_login' %}Bank Login
+              {% elif tmpl.fake_page_type == 'prize_claim' %}Prize Claim
+              {% else %}{{ tmpl.fake_page_type }}{% endif %}
+            </span>
+          </div>
+          <div class="col-sm-6 col-md-3">
+            <div class="small text-muted mb-1">Created</div>
+            <span class="small">{{ tmpl.created_at.strftime('%d %b %Y') }}</span>
+          </div>
+        </div>
+        {% if tmpl.description %}
+        <hr class="my-3" />
+        <div class="small text-muted">{{ tmpl.description }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Email preview -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-bottom py-3">
+        <h6 class="fw-bold mb-0" style="color:var(--navy)">
+          <i class="fa-solid fa-envelope me-2" style="color:var(--orange)"></i>Email Preview
+        </h6>
+      </div>
+      <!-- Email client header strip -->
+      <div class="px-4 py-3 border-bottom bg-light">
+        <div class="mb-1 small">
+          <span class="text-muted me-2">From:</span>
+          <span class="fw-semibold">FUT Minna IT Services &lt;noreply@futminna.edu.ng&gt;</span>
+        </div>
+        <div class="mb-1 small">
+          <span class="text-muted me-2">To:</span>
+          <span>target.user@example.com</span>
+        </div>
+        <div class="mb-1 small">
+          <span class="text-muted me-2">Subject:</span>
+          <span class="fw-semibold">{{ tmpl.subject }}</span>
+        </div>
+        {% if tmpl.preview_text %}
+        <div class="small text-muted">
+          <span class="me-2">Preview:</span>{{ tmpl.preview_text }}
+        </div>
+        {% endif %}
+      </div>
+      <!-- Rendered body -->
+      <div class="card-body p-0">
+        <iframe src="{{ url_for('simulator.preview_template_email', tid=tmpl.id) }}"
+                style="width:100%;min-height:600px;border:0;"
+                sandbox="allow-same-origin"></iframe>
+      </div>
+    </div>
+
+    <!-- Raw HTML toggle -->
+    <div class="mt-3">
+      <button class="btn btn-sm btn-outline-secondary" type="button"
+              data-bs-toggle="collapse" data-bs-target="#rawHtml">
+        <i class="fa-solid fa-code me-1"></i>View Raw HTML
+      </button>
+      <div class="collapse mt-2" id="rawHtml">
+        <pre class="border rounded bg-light p-3 small" style="max-height:300px;overflow:auto;">{{ tmpl.body_html | e }}</pre>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}
+

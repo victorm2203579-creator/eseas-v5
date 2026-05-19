@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}Sign In | ESEAS{% endblock %}
+{% block page_title %}Sign In{% endblock %}
+
+{% block content %}
+<section class="py-5 auth-section">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-5 col-lg-4">
+
+        <div class="card auth-card shadow border-0">
+          <!-- Header -->
+          <div class="card-header text-center py-4" style="background:var(--navy); border-radius:.75rem .75rem 0 0;">
+            <div class="auth-icon-circle mx-auto mb-3">
+              <i class="fa-solid fa-right-to-bracket fa-xl"></i>
+            </div>
+            <h4 class="text-white fw-bold mb-0">Sign In</h4>
+            <p class="text-white-50 small mb-0">Welcome back to ESEAS</p>
+          </div>
+
+          <!-- Body -->
+          <div class="card-body p-4">
+            <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+              {{ form.hidden_tag() }}
+
+              <!-- Email -->
+              <div class="mb-3">
+                {{ form.email.label(class='form-label fw-semibold') }}
+                <div class="input-group">
+                  <span class="input-group-text bg-light border-end-0">
+                    <i class="fa-solid fa-envelope text-muted"></i>
+                  </span>
+                  {{ form.email(class='form-control border-start-0 ps-0' +
+                     (' is-invalid' if form.email.errors else ''),
+                     placeholder='you@example.com', autofocus=True) }}
+                </div>
+                {% for err in form.email.errors %}
+                  <div class="invalid-feedback d-block">{{ err }}</div>
+                {% endfor %}
+              </div>
+
+              <!-- Password with show/hide toggle -->
+              <div class="mb-3">
+                {{ form.password.label(class='form-label fw-semibold') }}
+                <div class="input-group">
+                  <span class="input-group-text bg-light border-end-0">
+                    <i class="fa-solid fa-lock text-muted"></i>
+                  </span>
+                  {{ form.password(class='form-control border-start-0 border-end-0 ps-0' +
+                     (' is-invalid' if form.password.errors else ''),
+                     id='loginPassword', placeholder='••••••••') }}
+                  <button class="btn btn-outline-secondary border-start-0"
+                          type="button" id="toggleLoginPw" tabindex="-1">
+                    <i class="fa-solid fa-eye" id="toggleLoginIcon"></i>
+                  </button>
+                </div>
+                {% for err in form.password.errors %}
+                  <div class="invalid-feedback d-block">{{ err }}</div>
+                {% endfor %}
+              </div>
+
+              <!-- Remember me + Forgot -->
+              <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="form-check mb-0">
+                  {{ form.remember_me(class='form-check-input') }}
+                  {{ form.remember_me.label(class='form-check-label small') }}
+                </div>
+                <a href="{{ url_for('auth.reset_request') }}"
+                   class="small text-decoration-none" style="color:var(--orange)">
+                  Forgot password?
+                </a>
+              </div>
+
+              {{ form.submit(class='btn btn-orange w-100 py-2 fw-semibold') }}
+            </form>
+          </div>
+
+          <!-- Footer -->
+          <div class="card-footer text-center bg-transparent py-3 border-top">
+            <span class="text-muted small">
+              Don't have an account?
+              <a href="{{ url_for('auth.register') }}"
+                 class="text-decoration-none fw-semibold" style="color:var(--orange)">
+                Register here
+              </a>
+            </span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.getElementById('toggleLoginPw').addEventListener('click', () => {
+    const pw = document.getElementById('loginPassword');
+    const icon = document.getElementById('toggleLoginIcon');
+    if (pw.type === 'password') {
+      pw.type = 'text';
+      icon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+      pw.type = 'password';
+      icon.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+  });
+</script>
+{% endblock %}

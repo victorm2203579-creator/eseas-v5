@@ -1,0 +1,25 @@
+gunicorn>=21.2.0
+# Core Flask stack (Python 3.11+)
+Flask>=3.0.0
+Flask-Login>=0.6.3
+Flask-Mail>=0.10.0
+Flask-Migrate>=4.0.7
+Flask-SQLAlchemy>=3.1.1
+Flask-WTF>=1.2.1
+Flask-Limiter>=3.5.0
+Werkzeug>=3.0.0
+python-dotenv>=1.0.0
+itsdangerous>=2.1.2
+# ML / data science
+scikit-learn>=1.5.0
+pandas>=2.2.0
+numpy>=2.0.0
+joblib>=1.3.2
+# Utilities
+python-whois>=0.8.0
+requests>=2.31.0
+reportlab>=4.0.4
+email-validator>=2.0.0
+WTForms>=3.0.1
+SQLAlchemy>=2.0.36
+Jinja2>=3.1.2

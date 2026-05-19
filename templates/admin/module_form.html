@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Edit' if mode == 'edit' else 'New' }} Module | ESEAS Admin{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container" style="max-width:760px;">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <a href="{{ url_for('training_admin.training_management') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="fa-solid fa-arrow-left"></i>
+      </a>
+      <div>
+        <h4 class="fw-bold mb-0" style="color:var(--navy)">
+          <i class="fa-solid fa-{{ 'pencil' if mode == 'edit' else 'plus' }} me-2" style="color:var(--orange)"></i>
+          {{ 'Edit Module' if mode == 'edit' else 'New Training Module' }}
+        </h4>
+        <p class="text-muted small mb-0">
+          {{ ('Editing: ' + module.title) if mode == 'edit' else 'Fill in the details for a new module.' }}
+        </p>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+        <form method="POST">
+
+          <div class="row g-3">
+
+            <!-- Title -->
+            <div class="col-12">
+              <label class="form-label fw-semibold">Module Title <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" name="title" required
+                     value="{{ module.title if mode == 'edit' else '' }}"
+                     placeholder="e.g. Recognising Phishing Emails">
+            </div>
+
+            <!-- Topic -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Topic <span class="text-danger">*</span></label>
+              <select class="form-select" name="topic" required>
+                {% for key, meta in topics %}
+                <option value="{{ key }}"
+                  {{ 'selected' if mode == 'edit' and module.topic == key else '' }}>
+                  {{ meta[0] }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Icon class -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Icon Class</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="fa-solid {{ module.icon_class if mode == 'edit' else 'fa-book' }}" id="icon-preview"></i>
+                </span>
+                <input type="text" class="form-control" name="icon_class" id="icon-input"
+                       value="{{ module.icon_class if mode == 'edit' else 'fa-book' }}"
+                       placeholder="fa-book">
+              </div>
+              <div class="form-text">FontAwesome 6 class, e.g. <code>fa-shield-halved</code></div>
+            </div>
+
+            <!-- Description -->
+            <div class="col-12">
+              <label class="form-label fw-semibold">Short Description</label>
+              <textarea class="form-control" name="description" rows="2"
+                        placeholder="One or two sentences shown on the dashboard card.">{{ module.description if mode == 'edit' else '' }}</textarea>
+            </div>
+
+            <!-- Estimated minutes + order -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Estimated Minutes</label>
+              <input type="number" class="form-control" name="estimated_minutes" min="1" max="120"
+                     value="{{ module.estimated_minutes if mode == 'edit' else 10 }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Order Index</label>
+              <input type="number" class="form-control" name="order_index" min="0"
+                     value="{{ module.order_index if mode == 'edit' else 99 }}">
+              <div class="form-text">Lower numbers appear first.</div>
+            </div>
+
+            <!-- Video URL -->
+            <div class="col-12">
+              <label class="form-label fw-semibold">YouTube Embed URL (optional)</label>
+              <input type="url" class="form-control" name="video_url"
+                     value="{{ module.video_url or '' if mode == 'edit' else '' }}"
+                     placeholder="https://www.youtube.com/embed/...">
+            </div>
+
+            <!-- Is active (edit only) -->
+            {% if mode == 'edit' %}
+            <div class="col-12">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="is_active" id="isActive"
+                       {{ 'checked' if module.is_active else '' }}>
+                <label class="form-check-label fw-semibold" for="isActive">Module Active</label>
+              </div>
+            </div>
+            {% endif %}
+
+            <!-- Content HTML -->
+            <div class="col-12">
+              <label class="form-label fw-semibold">
+                Lesson Content (HTML) <span class="text-danger">*</span>
+              </label>
+              <div class="alert alert-info py-2 small mb-2">
+                <i class="fa-solid fa-circle-info me-1"></i>
+                Enter full HTML. Bootstrap 5 classes are available. Use
+                <code>&lt;h4&gt;</code>, <code>&lt;p&gt;</code>, <code>&lt;ul&gt;</code>,
+                <code>.card</code>, <code>.alert</code>, <code>.table</code> etc.
+              </div>
+              <textarea class="form-control font-monospace" name="content_html" rows="18"
+                        style="font-size:.8rem;" required>{{ module.content_html if mode == 'edit' else '' }}</textarea>
+            </div>
+
+          </div>
+
+          <!-- Submit row -->
+          <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-orange">
+              <i class="fa-solid fa-floppy-disk me-1"></i>
+              {{ 'Save Changes' if mode == 'edit' else 'Create Module' }}
+            </button>
+            <a href="{{ url_for('training_admin.training_management') }}"
+               class="btn btn-outline-secondary">Cancel</a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Live icon preview
+document.getElementById('icon-input').addEventListener('input', function() {
+  const preview = document.getElementById('icon-preview');
+  preview.className = 'fa-solid ' + this.value.trim();
+});
+</script>
+{% endblock %}

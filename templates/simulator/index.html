@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% block title %}Simulator | ESEAS{% endblock %}
+{% block page_title %}Campaigns{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+      <div>
+        <h2 class="fw-bold mb-0" style="color:var(--navy)">
+          <i class="fa-solid fa-crosshairs me-2" style="color:var(--orange)"></i>Phishing Simulator
+        </h2>
+        <p class="text-muted small mb-0">Design and run controlled social engineering campaigns for security awareness training.</p>
+      </div>
+      <a href="{{ url_for('simulator.new_campaign') }}" class="btn btn-orange btn-sm">
+        <i class="fa-solid fa-plus me-1"></i>New Campaign
+      </a>
+    </div>
+
+    <!-- Stat cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3" style="border-top:3px solid var(--orange);">
+          <h3 class="fw-bold mb-0" style="color:var(--navy)">{{ total }}</h3>
+          <p class="text-muted small mb-0">Total Campaigns</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3" style="border-top:3px solid #ffc107;">
+          <h3 class="fw-bold mb-0 text-warning">{{ active }}</h3>
+          <p class="text-muted small mb-0">Active</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3" style="border-top:3px solid #dc3545;">
+          <h3 class="fw-bold mb-0 text-danger">{{ avg_click }}%</h3>
+          <p class="text-muted small mb-0">Avg Click Rate</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3" style="border-top:3px solid #198754;">
+          <h3 class="fw-bold mb-0 text-success">{{ avg_report }}%</h3>
+          <p class="text-muted small mb-0">Avg Report Rate</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick links -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body d-flex align-items-start gap-3">
+            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                 style="width:48px;height:48px;background:rgba(255,107,53,.15);">
+              <i class="fa-solid fa-envelope fa-lg" style="color:var(--orange)"></i>
+            </div>
+            <div>
+              <h6 class="fw-bold mb-1" style="color:var(--navy)">Campaigns</h6>
+              <p class="text-muted small mb-2">Create and manage phishing simulation campaigns targeting users.</p>
+              <a href="{{ url_for('simulator.new_campaign') }}" class="btn btn-sm btn-orange">
+                <i class="fa-solid fa-plus me-1"></i>New Campaign
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body d-flex align-items-start gap-3">
+            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                 style="width:48px;height:48px;background:rgba(10,22,40,.1);">
+              <i class="fa-solid fa-file-code fa-lg" style="color:var(--navy)"></i>
+            </div>
+            <div>
+              <h6 class="fw-bold mb-1" style="color:var(--navy)">Email Templates</h6>
+              <p class="text-muted small mb-2">Build reusable phishing email templates with click-tracking links.</p>
+              <a href="{{ url_for('simulator.templates') }}" class="btn btn-sm btn-outline-secondary me-1">
+                <i class="fa-solid fa-list me-1"></i>View All
+              </a>
+              <a href="{{ url_for('simulator.new_template') }}" class="btn btn-sm btn-orange">
+                <i class="fa-solid fa-plus me-1"></i>New
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Campaigns table -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+        <h6 class="fw-bold mb-0" style="color:var(--navy)">
+          <i class="fa-solid fa-list me-2" style="color:var(--orange)"></i>All Campaigns
+        </h6>
+      </div>
+      <div class="card-body p-0">
+        {% if campaigns %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead style="background:var(--navy); color:#fff;">
+              <tr>
+                <th class="ps-4 py-3">Campaign</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Targets</th>
+                <th>Click Rate</th>
+                <th>Created</th>
+                <th class="text-center pe-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in campaigns %}
+              <tr id="camp-{{ c.id }}">
+                <td class="ps-4">
+                  <div class="fw-semibold small">{{ c.name }}</div>
+                  {% if c.description %}
+                  <div class="text-muted" style="font-size:.75rem;">
+                    {{ c.description[:60] }}{% if c.description|length > 60 %}…{% endif %}
+                  </div>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge bg-{{ c.attack_type_color }} small">
+                    <i class="fa-solid {{ c.attack_type_icon }} me-1"></i>{{ c.attack_type_label }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge bg-{{ c.status_color }}">
+                    <i class="fa-solid {{ c.status_icon }} me-1"></i>{{ c.status|capitalize }}
+                  </span>
+                </td>
+                <td class="small">{{ c.target_count }}</td>
+                <td>
+                  {% if c.emails_sent > 0 %}
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="progress flex-grow-1" style="height:6px; min-width:60px;">
+                      <div class="progress-bar bg-danger" style="width:{{ c.click_rate }}%"></div>
+                    </div>
+                    <span class="small fw-bold text-danger">{{ c.click_rate }}%</span>
+                  </div>
+                  {% else %}
+                  <span class="text-muted small">—</span>
+                  {% endif %}
+                </td>
+                <td class="small text-muted text-nowrap">
+                  {{ c.created_at.strftime('%d %b %Y') }}
+                </td>
+                <td class="text-center pe-4">
+                  <div class="d-flex gap-1 justify-content-center">
+                    <a href="{{ url_for('simulator.campaign_detail', id=c.id) }}"
+                       class="btn btn-sm btn-outline-secondary" title="View">
+                      <i class="fa-solid fa-eye"></i>
+                    </a>
+                    <a href="{{ url_for('simulator.campaign_results', id=c.id) }}"
+                       class="btn btn-sm btn-outline-primary" title="Results">
+                      <i class="fa-solid fa-chart-bar"></i>
+                    </a>
+                    <button class="btn btn-sm btn-outline-danger del-camp-btn"
+                            data-id="{{ c.id }}" title="Delete"
+                            {% if c.status == 'active' %}disabled title="Cannot delete active campaign"{% endif %}>
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-5">
+          <i class="fa-solid fa-crosshairs fa-3x mb-3 d-block opacity-25"></i>
+          <p class="mb-2">No campaigns yet.</p>
+          <a href="{{ url_for('simulator.new_campaign') }}" class="btn btn-orange btn-sm">
+            <i class="fa-solid fa-plus me-1"></i>Create Your First Campaign
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.querySelectorAll('.del-camp-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    if (!confirm('Delete this campaign and all its targets? This cannot be undone.')) return;
+    const id   = btn.dataset.id;
+    const resp = await fetch(`/simulator/campaigns/${id}`, { method: 'DELETE' });
+    const data = await resp.json();
+    if (resp.ok) {
+      document.getElementById(`camp-${id}`)?.remove();
+    } else {
+      alert(data.error || 'Could not delete campaign.');
+    }
+  });
+});
+</script>
+{% endblock %}

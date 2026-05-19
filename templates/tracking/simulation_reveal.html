@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security Simulation Alert | ESEAS</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <style>
+    body { background:#0a1628; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:16px; }
+    .reveal-card { max-width:640px; width:100%; }
+    .alert-banner { background:linear-gradient(135deg,#dc3545,#b02a37); color:#fff; border-radius:12px 12px 0 0; padding:32px 28px; text-align:center; }
+    .alert-icon { font-size:4rem; margin-bottom:12px; }
+    .alert-banner h1 { font-size:1.5rem; font-weight:900; letter-spacing:.03em; margin:0; }
+    .reveal-body { background:#fff; border-radius:0 0 12px 12px; padding:28px 32px; }
+    .what-happened { background:#fff3cd; border-left:4px solid #ffc107; padding:14px 16px; border-radius:4px; margin-bottom:1.2rem; }
+    .clue-item { display:flex; gap:10px; align-items:flex-start; margin-bottom:.75rem; }
+    .clue-icon { color:#dc3545; font-size:1rem; flex-shrink:0; margin-top:2px; }
+    .btn-training { background:#ff6b35; color:#fff; font-weight:700; padding:.65rem 1.5rem; border:none; border-radius:6px; font-size:1rem; text-decoration:none; display:inline-block; }
+    .btn-training:hover { background:#e55a25; color:#fff; }
+    .countdown-bar { background:#f8d7da; border-radius:6px; overflow:hidden; height:8px; margin-top:8px; }
+    .countdown-fill { height:8px; background:#dc3545; border-radius:6px; transition:width 1s linear; }
+  </style>
+  <!-- Auto-redirect to training after 10 seconds -->
+  <meta http-equiv="refresh" content="10;url=/training/">
+</head>
+<body>
+  <div class="reveal-card">
+    <div class="alert-banner">
+      <div class="alert-icon">⚠️</div>
+      <h1>THIS WAS A SECURITY SIMULATION</h1>
+      <p class="mt-2 mb-0 opacity-90">
+        You have just entered your credentials on a simulated phishing page.
+      </p>
+    </div>
+
+    <div class="reveal-body">
+
+      <div class="what-happened">
+        <strong>What just happened?</strong><br>
+        This was a controlled phishing simulation run by
+        <strong>{{ campaign.admin.name if campaign else 'ESEAS' }}</strong>
+        as part of your organisation's security awareness programme.
+        <strong>No real data was captured or stored.</strong>
+      </div>
+
+      <h6 class="fw-bold mb-3" style="color:#0a1628;">
+        🔍 Red flags you should have noticed:
+      </h6>
+
+      <div class="clue-item">
+        <span class="clue-icon">❌</span>
+        <span><strong>Suspicious URL:</strong> The page address was not on the official domain.
+        Always check the full URL before entering any credentials.</span>
+      </div>
+      <div class="clue-item">
+        <span class="clue-icon">❌</span>
+        <span><strong>Urgency &amp; pressure:</strong> Legitimate systems rarely demand
+        immediate login under threat of account suspension.</span>
+      </div>
+      <div class="clue-item">
+        <span class="clue-icon">❌</span>
+        <span><strong>Unexpected email:</strong> You were not expecting this communication.
+        Unsolicited emails with links are a primary phishing vector.</span>
+      </div>
+      <div class="clue-item">
+        <span class="clue-icon">❌</span>
+        <span><strong>Credentials requested via link:</strong> Legitimate IT departments
+        never ask you to verify your password by clicking an email link.</span>
+      </div>
+
+      <div class="text-center mt-4">
+        <p class="text-muted small mb-2">
+          Complete your security training to learn how to protect yourself.
+          Redirecting in <strong id="counter">10</strong> seconds…
+        </p>
+        <div class="countdown-bar mb-3">
+          <div class="countdown-fill" id="countFill" style="width:100%;"></div>
+        </div>
+        <a href="/training/" class="btn-training">
+          📚 Start Security Training Now
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let t = 10;
+    const el = document.getElementById('counter');
+    const fill = document.getElementById('countFill');
+    setInterval(() => {
+      t = Math.max(0, t - 1);
+      if (el) el.textContent = t;
+      if (fill) fill.style.width = (t * 10) + '%';
+      if (t === 0) window.location.href = '/training/';
+    }, 1000);
+  </script>
+</body>
+</html>

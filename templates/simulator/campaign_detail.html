@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% block title %}{{ campaign.name }} | ESEAS{% endblock %}
+{% block page_title %}Campaign Detail{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+
+    <!-- Nav -->
+    <div class="d-flex gap-2 mb-4">
+      <a href="{{ url_for('simulator.index') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="fa-solid fa-arrow-left me-1"></i>Back to Campaigns
+      </a>
+      <a href="{{ url_for('simulator.export_results', id=campaign.id) }}"
+         class="btn btn-sm btn-outline-secondary">
+        <i class="fa-solid fa-file-csv me-1"></i>Export CSV
+      </a>
+    </div>
+
+    <!-- Header card -->
+    <div class="card border-0 shadow-sm mb-4 border-start border-5 border-{{ campaign.status_color }}">
+      <div class="card-body p-4">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <span class="badge bg-{{ campaign.status_color }} fs-6">
+                {{ campaign.status|capitalize }}
+              </span>
+              <span class="text-muted small">Campaign #{{ campaign.id }}</span>
+            </div>
+            <h4 class="fw-bold mb-1" style="color:var(--navy)">{{ campaign.name }}</h4>
+            {% if campaign.description %}
+            <p class="text-muted small mb-1">{{ campaign.description }}</p>
+            {% endif %}
+            <p class="text-muted small mb-0">
+              <i class="fa-solid fa-tag me-1"></i>
+              {{ campaign.template.name if campaign.template else campaign.attack_type_label }}
+              &nbsp;·&nbsp;
+              <i class="fa-solid fa-calendar me-1"></i>Created {{ campaign.created_at.strftime('%d %b %Y at %H:%M') }}
+            </p>
+          </div>
+          <div class="col-md-4 text-md-end mt-3 mt-md-0 d-flex flex-column gap-2 align-items-md-end">
+            {% if campaign.status == 'draft' %}
+            <button id="launchBtn" class="btn btn-orange">
+              <i class="fa-solid fa-paper-plane me-1"></i>Launch Campaign
+            </button>
+            {% elif campaign.status == 'active' %}
+            <button id="completeBtn" class="btn btn-success">
+              <i class="fa-solid fa-flag-checkered me-1"></i>Mark Complete
+            </button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+          <h3 class="fw-bold mb-0" style="color:var(--navy)">{{ campaign.target_count }}</h3>
+          <p class="text-muted small mb-0">Targets</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+          <h3 class="fw-bold mb-0 text-warning">{{ campaign.emails_sent }}</h3>
+          <p class="text-muted small mb-0">Sent</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+          <h3 class="fw-bold mb-0 text-danger">{{ campaign.links_clicked }}</h3>
+          <p class="text-muted small mb-0">Clicked</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+          <h3 class="fw-bold mb-0 text-success">{{ campaign.reports_submitted }}</h3>
+          <p class="text-muted small mb-0">Reported</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Click rate bar -->
+    {% if campaign.emails_sent > 0 %}
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body py-3">
+        <div class="d-flex justify-content-between mb-1">
+          <span class="small fw-semibold">Click Rate</span>
+          <span class="small fw-bold text-danger">{{ campaign.click_rate }}%</span>
+        </div>
+        <div class="progress" style="height:10px;">
+          <div class="progress-bar bg-danger" style="width:{{ campaign.click_rate }}%"></div>
+        </div>
+        <p class="text-muted small mt-2 mb-0">
+          {{ campaign.links_clicked }} of {{ campaign.emails_sent }} recipients clicked the simulated phishing link.
+        </p>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Targets table -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-header py-3" style="background:var(--navy);">
+        <h6 class="text-white mb-0 fw-semibold">
+          <i class="fa-solid fa-users me-2" style="color:var(--orange)"></i>
+          Targets ({{ campaign.target_count }})
+        </h6>
+      </div>
+      <div class="card-body p-0">
+        {% if recent_targets %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-4 py-2">Name</th>
+                <th>Email</th>
+                <th>Outcome</th>
+                <th>Sent At</th>
+                <th>Clicked At</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for t in recent_targets %}
+              <tr id="target-{{ t.id }}">
+                <td class="ps-4 small">{{ t.user.name }}</td>
+                <td class="small font-monospace">{{ t.user.email }}</td>
+                <td>
+                  <span class="badge bg-{{ t.outcome_color }}">
+                    <i class="fa-solid {{ t.outcome_icon }} me-1"></i>{{ t.outcome|capitalize }}
+                  </span>
+                </td>
+                <td class="small text-muted">
+                  {{ t.email_sent_at.strftime('%d %b %H:%M') if t.email_sent_at else '—' }}
+                </td>
+                <td class="small text-muted">
+                  {{ t.clicked_at.strftime('%d %b %H:%M') if t.clicked_at else '—' }}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="p-3 text-end">
+          <a href="{{ url_for('simulator.campaign_results', id=campaign.id) }}"
+             class="btn btn-sm btn-outline-primary">
+            <i class="fa-solid fa-list me-1"></i>View All Results
+          </a>
+        </div>
+        {% else %}
+        <p class="text-muted p-4 mb-0">No targets added to this campaign.</p>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const CID = {{ campaign.id }};
+
+document.getElementById('launchBtn')?.addEventListener('click', async () => {
+  if (!confirm('Launch this campaign? Phishing emails will be sent to all targets.')) return;
+  const resp = await fetch(`/simulator/campaigns/${CID}/launch`, { method: 'POST' });
+  if (resp.ok) location.reload();
+  else {
+    const data = await resp.json().catch(() => ({}));
+    alert(data.error || 'Failed to launch campaign.');
+  }
+});
+
+document.getElementById('completeBtn')?.addEventListener('click', async () => {
+  const resp = await fetch(`/simulator/campaigns/${CID}/complete`, { method: 'POST' });
+  if (resp.ok) location.reload();
+});
+</script>
+{% endblock %}

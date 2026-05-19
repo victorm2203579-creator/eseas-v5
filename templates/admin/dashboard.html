@@ -1,0 +1,527 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard — ESEAS{% endblock %}
+{% block page_title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+
+  <!-- ── Header Bar ─────────────────────────────────────────────────────── -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-0" style="color:var(--navy)">
+        <i class="fa-solid fa-gauge-high me-2" style="color:var(--orange)"></i>Admin Dashboard
+      </h2>
+      <p class="text-muted small mb-0"><span id="todayDate"></span> — System-wide overview</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="/reports" class="btn btn-sm btn-outline-secondary">Reports</a>
+      <a href="/reports/full/pdf" class="btn btn-sm btn-orange">PDF Report</a>
+    </div>
+  </div>
+
+  <!-- ── Row 1 — Stat Cards ─────────────────────────────────────────────── -->
+  <div class="row g-3 mb-4">
+
+    <!-- Total Users -->
+    <div class="col-md-3">
+      <div class="card h-100 stat-card shadow-sm" style="border-top:3px solid #0d6efd; transition:transform .15s;">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <p class="text-muted small mb-1 text-uppercase fw-semibold">Total Users</p>
+              <h2 class="fw-bold mb-0" style="color:#0d6efd;">{{ total_users }}</h2>
+              <p class="text-muted small mb-0 mt-1">+{{ new_users_this_week }} this week</p>
+            </div>
+            <div class="rounded-circle d-flex align-items-center justify-content-center"
+                 style="width:48px;height:48px;background:rgba(13,110,253,.15);border:1.5px solid rgba(13,110,253,.3);">
+              <i class="fa-solid fa-users" style="color:#0d6efd;font-size:1.2rem;"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- URLs Scanned -->
+    <div class="col-md-3">
+      <div class="card h-100 stat-card shadow-sm" style="border-top:3px solid var(--orange); transition:transform .15s;">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <p class="text-muted small mb-1 text-uppercase fw-semibold">URLs Scanned</p>
+              <h2 class="fw-bold mb-0" style="color:var(--orange);">{{ total_scans }}</h2>
+              <p class="text-muted small mb-0 mt-1">{{ scans_today }} scanned today</p>
+            </div>
+            <div class="rounded-circle d-flex align-items-center justify-content-center"
+                 style="width:48px;height:48px;background:rgba(255,107,53,.15);border:1.5px solid rgba(255,107,53,.3);">
+              <i class="fa-solid fa-link" style="color:var(--orange);font-size:1.2rem;"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phishing Detected -->
+    <div class="col-md-3">
+      <div class="card h-100 stat-card shadow-sm" style="border-top:3px solid #dc3545; transition:transform .15s;">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <p class="text-muted small mb-1 text-uppercase fw-semibold">Phishing Detected</p>
+              <h2 class="fw-bold mb-0" style="color:#dc3545;">{{ phishing_detected }}</h2>
+              <p class="text-muted small mb-0 mt-1">Suspicious + Dangerous</p>
+            </div>
+            <div class="rounded-circle d-flex align-items-center justify-content-center"
+                 style="width:48px;height:48px;background:rgba(220,53,69,.15);border:1.5px solid rgba(220,53,69,.3);">
+              <i class="fa-solid fa-shield-virus" style="color:#dc3545;font-size:1.2rem;"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Avg Click Rate -->
+    <div class="col-md-3">
+      <div class="card h-100 stat-card shadow-sm" style="border-top:3px solid #6f42c1; transition:transform .15s;">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <p class="text-muted small mb-1 text-uppercase fw-semibold">Avg Click Rate</p>
+              <h2 class="fw-bold mb-0" style="color:#6f42c1;">{{ avg_click_rate }}%</h2>
+              <p class="text-muted small mb-0 mt-1">{{ avg_click_rate }}% avg across campaigns</p>
+            </div>
+            <div class="rounded-circle d-flex align-items-center justify-content-center"
+                 style="width:48px;height:48px;background:rgba(111,66,193,.15);border:1.5px solid rgba(111,66,193,.3);">
+              <i class="fa-solid fa-computer-mouse" style="color:#6f42c1;font-size:1.2rem;"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /Row 1 -->
+
+  <!-- ── Row 2 — Line Chart + Donut Chart ───────────────────────────────── -->
+  <div class="row g-3 mb-4">
+
+    <!-- URL Scans Line Chart -->
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header d-flex align-items-center" style="background:var(--navy);">
+          <i class="fa-solid fa-chart-line me-2" style="color:var(--orange);"></i>
+          <span class="fw-semibold text-white">URL Scans — Last 30 Days</span>
+        </div>
+        <div class="card-body">
+          <canvas id="lineChart" style="max-height:260px;"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Risk Distribution Donut Chart -->
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header d-flex align-items-center" style="background:var(--navy);">
+          <i class="fa-solid fa-chart-pie me-2" style="color:var(--orange);"></i>
+          <span class="fw-semibold text-white">Risk Distribution</span>
+        </div>
+        <div class="card-body d-flex align-items-center justify-content-center">
+          <canvas id="donutChart" style="max-height:260px;max-width:300px;"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /Row 2 -->
+
+  <!-- ── Row 3 — Campaign Bar + Training Horizontal Bar ─────────────────── -->
+  <div class="row g-3 mb-4">
+
+    <!-- Campaign Performance -->
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header d-flex align-items-center" style="background:var(--navy);">
+          <i class="fa-solid fa-bullhorn me-2" style="color:var(--orange);"></i>
+          <span class="fw-semibold text-white">Campaign Performance</span>
+        </div>
+        <div class="card-body">
+          <canvas id="campaignChart" style="max-height:260px;"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Training Pass Rates -->
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header d-flex align-items-center" style="background:var(--navy);">
+          <i class="fa-solid fa-graduation-cap me-2" style="color:var(--orange);"></i>
+          <span class="fw-semibold text-white">Training Pass Rates</span>
+        </div>
+        <div class="card-body">
+          <canvas id="trainingChart" style="max-height:260px;"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /Row 3 -->
+
+  <!-- ── Row 4 — User Risk Ranking Table ────────────────────────────────── -->
+  <div class="row g-3 mb-4">
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-header d-flex align-items-center" style="background:var(--navy);">
+          <i class="fa-solid fa-ranking-star me-2" style="color:var(--orange);"></i>
+          <span class="fw-semibold text-white">Top User Risk Ranking</span>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="ps-3" style="width:60px;">Rank</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th style="min-width:180px;">Risk Score</th>
+                  <th>Click Rate</th>
+                  <th>Training</th>
+                  <th>Risk Badge</th>
+                </tr>
+              </thead>
+              <tbody id="riskTableBody">
+                <tr>
+                  <td colspan="7" class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm text-secondary me-2" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <span class="text-muted small">Loading risk data…</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /Row 4 -->
+
+  <!-- ── Row 5 — Activity Feed + Quick Actions ──────────────────────────── -->
+  <div class="row g-3 mb-4">
+
+    <!-- Recent Activity -->
+    <div class="col-lg-7">
+      <div class="card shadow-sm h-100">
+        <div class="card-header d-flex align-items-center" style="background:var(--navy);">
+          <i class="fa-solid fa-bolt me-2" style="color:var(--orange);"></i>
+          <span class="fw-semibold text-white">Recent Activity</span>
+        </div>
+        <div class="card-body" style="max-height:400px;overflow-y:auto;">
+          <div id="activityFeed">
+            <div class="text-center py-3">
+              <div class="spinner-border spinner-border-sm text-secondary" role="status">
+                <span class="visually-hidden">Loading…</span>
+              </div>
+              <span class="text-muted small ms-2">Loading activity…</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions + System Health -->
+    <div class="col-lg-5 d-flex flex-column gap-3">
+
+      <!-- Quick Actions -->
+      <div class="card shadow-sm">
+        <div class="card-header d-flex align-items-center" style="background:var(--navy);">
+          <i class="fa-solid fa-zap me-2" style="color:var(--orange);"></i>
+          <span class="fw-semibold text-white">Quick Actions</span>
+        </div>
+        <div class="card-body d-grid gap-2">
+          <a href="/simulator/new" class="btn btn-orange">
+            <i class="fa-solid fa-plus me-2"></i>Create New Campaign
+          </a>
+          <a href="/reports/full/pdf" class="btn btn-outline-secondary">
+            <i class="fa-solid fa-download me-2"></i>Download PDF Report
+          </a>
+          <a href="/reports/export/users/csv" class="btn btn-outline-secondary">
+            <i class="fa-solid fa-users me-2"></i>Export Users CSV
+          </a>
+          <a href="/reports" class="btn btn-outline-secondary">
+            <i class="fa-solid fa-clock-rotate-left me-2"></i>View All Scan History
+          </a>
+        </div>
+      </div>
+
+      <!-- System Health -->
+      <div class="card shadow-sm">
+        <div class="card-header d-flex align-items-center" style="background:var(--navy);">
+          <i class="fa-solid fa-heart-pulse me-2" style="color:var(--orange);"></i>
+          <span class="fw-semibold text-white">System Health</span>
+        </div>
+        <div class="card-body">
+
+          <!-- Training Completion Rate -->
+          <div class="mb-3">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="small fw-semibold">Training Completion Rate</span>
+              <span class="small fw-bold" style="color:var(--orange);">{{ training_completion_rate }}%</span>
+            </div>
+            <div class="progress" style="height:8px;">
+              <div class="progress-bar"
+                   role="progressbar"
+                   style="width:{{ training_completion_rate }}%;background:var(--orange);"
+                   aria-valuenow="{{ training_completion_rate }}"
+                   aria-valuemin="0"
+                   aria-valuemax="100">
+              </div>
+            </div>
+          </div>
+
+          <!-- Total Campaigns -->
+          <div class="d-flex align-items-center justify-content-between p-2 rounded"
+               style="background:rgba(10,22,40,.05);">
+            <div class="d-flex align-items-center gap-2">
+              <i class="fa-solid fa-bullhorn" style="color:var(--navy);"></i>
+              <span class="small fw-semibold">Total Campaigns</span>
+            </div>
+            <span class="fw-bold" style="color:var(--navy);">{{ total_campaigns }}</span>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </div><!-- /Row 5 -->
+
+</div><!-- /container-fluid -->
+
+<style>
+  .stat-card:hover { transform: translateY(-3px); }
+</style>
+{% endblock %}
+
+
+{% block extra_scripts %}
+<script>
+/* ── Date ─────────────────────────────────────────────────────────────── */
+document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-GB', {
+  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+});
+
+/* ── timeAgo helper ───────────────────────────────────────────────────── */
+function timeAgo(isoStr) {
+  const diff = (Date.now() - new Date(isoStr).getTime()) / 1000;
+  if (diff < 60)    return Math.round(diff) + 's ago';
+  if (diff < 3600)  return Math.round(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.round(diff / 3600) + 'h ago';
+  return Math.round(diff / 86400) + 'd ago';
+}
+
+/* ── Line Chart: /api/stats/scans-over-time ───────────────────────────── */
+async function loadLineChart() {
+  try {
+    const data = await fetch('/api/stats/scans-over-time').then(r => r.json());
+    const ctx  = document.getElementById('lineChart').getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, 0, 200);
+    grad.addColorStop(0, 'rgba(255,107,53,0.35)');
+    grad.addColorStop(1, 'rgba(255,107,53,0)');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: data.map(d => d.date.slice(5)),
+        datasets: [{
+          label: 'Scans',
+          data: data.map(d => d.count),
+          borderColor: '#ff6b35',
+          borderWidth: 2,
+          backgroundColor: grad,
+          fill: true,
+          tension: 0,
+          pointRadius: data.map((_, i) => i === data.length - 1 ? 5 : 0),
+          pointBackgroundColor: '#ff6b35',
+        }]
+      },
+      options: {
+        scales: {
+          x: { grid: { color: 'rgba(0,0,0,.05)' }, ticks: { maxTicksLimit: 7 } },
+          y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: 'rgba(0,0,0,.05)' } }
+        },
+        plugins: { legend: { display: false } },
+      }
+    });
+  } catch (e) {
+    console.warn('loadLineChart error:', e);
+  }
+}
+
+/* ── Donut Chart: /api/stats/risk-distribution ────────────────────────── */
+async function loadDonut() {
+  try {
+    const d = await fetch('/api/stats/risk-distribution').then(r => r.json());
+    new Chart(document.getElementById('donutChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Safe', 'Suspicious', 'Dangerous'],
+        datasets: [{
+          data: [d.safe, d.suspicious, d.dangerous],
+          backgroundColor: ['#198754', '#fd7e14', '#dc3545'],
+          borderWidth: 2
+        }]
+      },
+      options: {
+        plugins: { legend: { position: 'bottom' } },
+        cutout: '65%'
+      }
+    });
+  } catch (e) {
+    console.warn('loadDonut error:', e);
+  }
+}
+
+/* ── Campaign Bar Chart: /api/stats/campaign-performance ─────────────── */
+async function loadCampaignChart() {
+  try {
+    const data = await fetch('/api/stats/campaign-performance').then(r => r.json());
+    new Chart(document.getElementById('campaignChart'), {
+      type: 'bar',
+      data: {
+        labels: data.map(d => d.name),
+        datasets: [
+          { label: 'Click Rate %',  data: data.map(d => d.click_rate),  backgroundColor: 'rgba(220,53,69,.7)' },
+          { label: 'Report Rate %', data: data.map(d => d.report_rate), backgroundColor: 'rgba(25,135,84,.7)' },
+        ]
+      },
+      options: {
+        scales: {
+          y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } }
+        },
+        plugins: { legend: { position: 'top' } },
+      }
+    });
+  } catch (e) {
+    console.warn('loadCampaignChart error:', e);
+  }
+}
+
+/* ── Training Horizontal Bar: /api/stats/training-completion ─────────── */
+async function loadTrainingChart() {
+  try {
+    const data = await fetch('/api/stats/training-completion').then(r => r.json());
+    new Chart(document.getElementById('trainingChart'), {
+      type: 'bar',
+      data: {
+        labels: data.map(d => d.module.length > 20 ? d.module.slice(0, 18) + '…' : d.module),
+        datasets: [
+          { label: 'Passed',      data: data.map(d => d.passed),      backgroundColor: 'rgba(25,135,84,.8)' },
+          { label: 'Failed',      data: data.map(d => d.failed),      backgroundColor: 'rgba(220,53,69,.7)' },
+          { label: 'Not Started', data: data.map(d => d.not_started), backgroundColor: 'rgba(108,117,125,.4)' },
+        ]
+      },
+      options: {
+        indexAxis: 'y',
+        scales: {
+          x: { beginAtZero: true, stacked: true },
+          y: { stacked: true }
+        },
+        plugins: { legend: { position: 'top' } },
+      }
+    });
+  } catch (e) {
+    console.warn('loadTrainingChart error:', e);
+  }
+}
+
+/* ── User Risk Ranking Table: /api/stats/user-risk-ranking ───────────── */
+async function loadRiskTable() {
+  try {
+    const data  = await fetch('/api/stats/user-risk-ranking').then(r => r.json());
+    const tbody = document.getElementById('riskTableBody');
+    tbody.innerHTML = '';
+
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No user data yet.</td></tr>';
+      return;
+    }
+
+    data.forEach((u, i) => {
+      const barClass     = u.risk_score >= 70 ? 'bg-danger' : u.risk_score >= 40 ? 'bg-warning' : 'bg-success';
+      const badgeClass   = u.risk_level === 'High' ? 'bg-danger' : u.risk_level === 'Medium' ? 'bg-warning' : 'bg-success';
+      const textClass    = barClass.replace('bg-', 'text-');
+      const trainingBadge = u.training_complete
+        ? '<span class="badge bg-success">Complete</span>'
+        : '<span class="badge bg-secondary">Incomplete</span>';
+
+      tbody.innerHTML += `<tr>
+        <td class="ps-3 fw-bold">#${i + 1}</td>
+        <td>${u.name}</td>
+        <td class="text-muted small">${u.email}</td>
+        <td style="min-width:160px;">
+          <div class="d-flex align-items-center gap-2">
+            <div class="progress flex-grow-1" style="height:6px;">
+              <div class="progress-bar ${barClass}" style="width:${u.risk_score}%"></div>
+            </div>
+            <span class="fw-bold small ${textClass}">${Math.round(u.risk_score)}</span>
+          </div>
+        </td>
+        <td>${u.click_rate}%</td>
+        <td>${trainingBadge}</td>
+        <td><span class="badge ${badgeClass}">${u.risk_level} Risk</span></td>
+      </tr>`;
+    });
+  } catch (e) {
+    console.warn('loadRiskTable error:', e);
+    document.getElementById('riskTableBody').innerHTML =
+      '<tr><td colspan="7" class="text-center text-danger py-4">Failed to load data.</td></tr>';
+  }
+}
+
+/* ── Recent Activity Feed: /api/stats/recent-activity ────────────────── */
+async function loadActivity() {
+  try {
+    const data = await fetch('/api/stats/recent-activity').then(r => r.json());
+    const feed = document.getElementById('activityFeed');
+
+    if (!data.length) {
+      feed.innerHTML = '<p class="text-muted small">No recent activity.</p>';
+      return;
+    }
+
+    const colorMap = {
+      orange:  'var(--orange)',
+      warning: '#fd7e14',
+      danger:  '#dc3545',
+      success: '#198754',
+      info:    '#0dcaf0',
+    };
+
+    feed.innerHTML = data.map(e => {
+      const dot  = colorMap[e.color] || '#6c757d';
+      const time = timeAgo(e.timestamp);
+      return `<div class="d-flex align-items-start gap-3 mb-3">
+        <span style="width:10px;height:10px;border-radius:50%;background:${dot};flex-shrink:0;margin-top:5px;display:inline-block;"></span>
+        <div class="flex-grow-1">
+          <div class="small fw-semibold">${e.description}</div>
+          <div class="d-flex gap-2">
+            <span class="text-muted" style="font-size:.75rem;">${e.user}</span>
+            <span class="text-muted" style="font-size:.75rem;">· ${time}</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    console.warn('loadActivity error:', e);
+    document.getElementById('activityFeed').innerHTML =
+      '<p class="text-muted small">Failed to load activity.</p>';
+  }
+}
+
+/* ── Bootstrap all loaders on DOMContentLoaded ────────────────────────── */
+document.addEventListener('DOMContentLoaded', function () {
+  loadLineChart();
+  loadDonut();
+  loadCampaignChart();
+  loadTrainingChart();
+  loadRiskTable();
+  loadActivity();
+});
+</script>
+{% endblock %}

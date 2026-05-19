@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background:#f1f4f8; margin:0; padding:0; }
+    .wrapper { max-width:560px; margin:40px auto; background:#fff;
+               border-radius:10px; overflow:hidden;
+               box-shadow:0 4px 16px rgba(0,0,0,.1); }
+    .header  { background:#0a1628; padding:36px 40px; text-align:center; }
+    .header h1 { color:#fff; font-size:24px; margin:0; }
+    .header .brand { color:#ff6b35; font-weight:700; }
+    .body    { padding:32px 40px; }
+    .body h2 { color:#0a1628; font-size:20px; margin-top:0; }
+    .body p  { color:#444; line-height:1.6; }
+    .btn    { display:inline-block; background:#ff6b35; color:#fff !important;
+              padding:12px 32px; border-radius:6px; text-decoration:none;
+              font-weight:600; font-size:15px; margin:20px 0; }
+    .warning-box { background:#fff8e1; border-left:4px solid #ffc107;
+                   padding:12px 16px; border-radius:4px; margin:20px 0;
+                   color:#856404; font-size:13px; }
+    .url-box { background:#f8f9fa; border:1px solid #dee2e6; border-radius:6px;
+               padding:12px 16px; font-family:monospace; font-size:12px;
+               color:#555; word-break:break-all; margin:12px 0; }
+    .footer { background:#f8f9fa; padding:20px 40px; text-align:center;
+              color:#999; font-size:12px; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <h1>🛡 <span class="brand">ESEAS</span></h1>
+      <p style="color:#aaa; margin:6px 0 0; font-size:13px;">Password Reset Request</p>
+    </div>
+    <div class="body">
+      <h2>Hi {{ user.name }},</h2>
+      <p>
+        We received a request to reset the password for your ESEAS account.
+        Click the button below to choose a new password:
+      </p>
+
+      <a href="{{ reset_url }}" class="btn">Reset My Password →</a>
+
+      <p style="font-size:13px; color:#777;">
+        Or copy and paste this link into your browser:
+      </p>
+      <div class="url-box">{{ reset_url }}</div>
+
+      <div class="warning-box">
+        ⏱ <strong>This link expires in 30 minutes.</strong><br>
+        If you didn't request a password reset, you can safely ignore this email —
+        your password will not be changed.
+      </div>
+
+      <p style="font-size:13px; color:#999;">
+        For security, this link can only be used once.
+      </p>
+    </div>
+    <div class="footer">
+      &copy; 2026 ESEAS — Final Year Cybersecurity Project<br>
+      This email was sent to {{ user.email }}
+    </div>
+  </div>
+</body>
+</html>

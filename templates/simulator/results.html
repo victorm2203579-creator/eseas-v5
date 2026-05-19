@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+{% block title %}Results: {{ campaign.name }} | ESEAS{% endblock %}
+{% block page_title %}Campaign Results{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+      <div>
+        <a href="{{ url_for('simulator.campaign_detail', id=campaign.id) }}"
+           class="btn btn-sm btn-outline-secondary mb-2">
+          <i class="fa-solid fa-arrow-left me-1"></i>Back to Campaign
+        </a>
+        <h2 class="fw-bold mb-0" style="color:var(--navy)">
+          <i class="fa-solid fa-chart-bar me-2" style="color:var(--orange)"></i>Campaign Results
+        </h2>
+        <p class="text-muted small mb-0">{{ campaign.name }}</p>
+      </div>
+      <a href="{{ url_for('simulator.export_results', id=campaign.id) }}"
+         class="btn btn-sm btn-outline-secondary">
+        <i class="fa-solid fa-download me-1"></i>Export CSV
+      </a>
+    </div>
+
+    <!-- Metric cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-2">
+        <div class="card border-0 shadow-sm text-center p-3" style="border-top:3px solid var(--orange);">
+          <h3 class="fw-bold mb-0" style="color:var(--navy)">{{ total }}</h3>
+          <p class="text-muted small mb-0">Total</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-2">
+        <div class="card border-0 shadow-sm text-center p-3" style="border-top:3px solid #fd7e14;">
+          <h3 class="fw-bold mb-0 text-warning">{{ clicked_count }}</h3>
+          <p class="text-muted small mb-0">Clicked</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-2">
+        <div class="card border-0 shadow-sm text-center p-3" style="border-top:3px solid #dc3545;">
+          <h3 class="fw-bold mb-0 text-danger">{{ credentials_count }}</h3>
+          <p class="text-muted small mb-0">Credentials</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-2">
+        <div class="card border-0 shadow-sm text-center p-3" style="border-top:3px solid #198754;">
+          <h3 class="fw-bold mb-0 text-success">{{ reported_count }}</h3>
+          <p class="text-muted small mb-0">Reported</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-2">
+        <div class="card border-0 shadow-sm text-center p-3" style="border-top:3px solid #6c757d;">
+          <h3 class="fw-bold mb-0 text-secondary">{{ safe_count }}</h3>
+          <p class="text-muted small mb-0">Safe</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-2">
+        <div class="card border-0 shadow-sm text-center p-3" style="border-top:3px solid var(--navy);">
+          <h3 class="fw-bold mb-0" style="color:var(--navy)">{{ campaign.click_rate }}%</h3>
+          <p class="text-muted small mb-0">Click Rate</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- JS-only filter pills (no page reload) -->
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      <button class="btn btn-sm btn-outline-secondary filter-btn active" data-filter="all">
+        All <span class="badge bg-secondary ms-1">{{ total }}</span>
+      </button>
+      <button class="btn btn-sm btn-outline-warning filter-btn" data-filter="clicked">
+        <i class="fa-solid fa-computer-mouse me-1"></i>Clicked
+        <span class="badge bg-warning text-dark ms-1">{{ clicked_count }}</span>
+      </button>
+      <button class="btn btn-sm btn-outline-danger filter-btn" data-filter="compromised">
+        <i class="fa-solid fa-skull-crossbones me-1"></i>Compromised
+        <span class="badge bg-danger ms-1">{{ credentials_count }}</span>
+      </button>
+      <button class="btn btn-sm btn-outline-success filter-btn" data-filter="reported">
+        <i class="fa-solid fa-shield-halved me-1"></i>Reported
+        <span class="badge bg-success ms-1">{{ reported_count }}</span>
+      </button>
+      <button class="btn btn-sm btn-outline-secondary filter-btn" data-filter="safe">
+        <i class="fa-solid fa-check me-1"></i>Safe
+        <span class="badge bg-secondary ms-1">{{ safe_count }}</span>
+      </button>
+    </div>
+
+    <!-- Targets table -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-0">
+        {% if targets %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0" id="resultsTable">
+            <thead style="background:var(--navy); color:#fff;">
+              <tr>
+                <th class="ps-4 py-3">User Name</th>
+                <th>Email</th>
+                <th>Email Sent</th>
+                <th>Clicked</th>
+                <th>Credentials</th>
+                <th>Reported</th>
+                <th>Training</th>
+                <th>Risk Impact</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for t in targets %}
+              {% if t.credentials_entered %}
+                {% set row_status = 'compromised' %}
+              {% elif t.link_clicked %}
+                {% set row_status = 'clicked' %}
+              {% elif t.reported_suspicious %}
+                {% set row_status = 'reported' %}
+              {% else %}
+                {% set row_status = 'safe' %}
+              {% endif %}
+
+              <tr data-status="{{ row_status }}">
+                <td class="ps-4 fw-semibold small">{{ t.user.name }}</td>
+
+                <td class="small text-muted">{{ t.user.email }}</td>
+
+                <!-- Email Sent -->
+                <td class="text-center">
+                  {% if t.email_sent %}
+                    <i class="fa-solid fa-circle-check text-success" title="{{ t.email_sent_at.strftime('%d %b %H:%M') if t.email_sent_at else 'Sent' }}"></i>
+                    {% if t.email_sent_at %}
+                    <div class="text-muted" style="font-size:.68rem;">{{ t.email_sent_at.strftime('%d %b') }}</div>
+                    {% endif %}
+                  {% else %}
+                    <i class="fa-solid fa-circle-xmark text-danger opacity-40"></i>
+                  {% endif %}
+                </td>
+
+                <!-- Clicked -->
+                <td class="text-center">
+                  {% if t.link_clicked %}
+                    <i class="fa-solid fa-circle-check text-warning"></i>
+                    {% if t.clicked_at %}
+                    <div class="text-muted" style="font-size:.68rem;">{{ t.clicked_at.strftime('%d %b %H:%M') }}</div>
+                    {% endif %}
+                  {% else %}
+                    <i class="fa-solid fa-circle-xmark text-muted opacity-40"></i>
+                  {% endif %}
+                </td>
+
+                <!-- Credentials -->
+                <td class="text-center">
+                  {% if t.credentials_entered %}
+                    <i class="fa-solid fa-circle-check text-danger"></i>
+                  {% else %}
+                    <i class="fa-solid fa-circle-xmark text-muted opacity-40"></i>
+                  {% endif %}
+                </td>
+
+                <!-- Reported -->
+                <td class="text-center">
+                  {% if t.reported_suspicious %}
+                    <i class="fa-solid fa-circle-check text-success"></i>
+                  {% else %}
+                    <i class="fa-solid fa-circle-xmark text-muted opacity-40"></i>
+                  {% endif %}
+                </td>
+
+                <!-- Training -->
+                <td class="text-center">
+                  {% if t.training_assigned %}
+                    <span class="badge bg-info text-white" style="font-size:.68rem;">Assigned</span>
+                  {% else %}
+                    <span class="text-muted small">—</span>
+                  {% endif %}
+                </td>
+
+                <!-- Risk Impact -->
+                <td>
+                  {% if t.credentials_entered %}
+                    <span class="badge bg-danger">High</span>
+                  {% elif t.link_clicked %}
+                    <span class="badge bg-warning text-dark">Medium</span>
+                  {% elif t.reported_suspicious %}
+                    <span class="badge bg-success">Low</span>
+                  {% else %}
+                    <span class="badge bg-secondary">None</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div id="noResults" class="text-center text-muted py-5" style="display:none;">
+          <i class="fa-solid fa-filter fa-2x mb-3 d-block opacity-25"></i>
+          No targets match this filter.
+        </div>
+
+        {% else %}
+        <div class="text-center text-muted py-5">
+          <i class="fa-solid fa-inbox fa-2x mb-3 d-block opacity-25"></i>
+          No targets in this campaign yet.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<script>
+(function () {
+  var btns  = document.querySelectorAll('.filter-btn');
+  var rows  = document.querySelectorAll('#resultsTable tbody tr');
+  var empty = document.getElementById('noResults');
+
+  btns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      btns.forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+
+      var f = btn.dataset.filter;
+      var visible = 0;
+
+      rows.forEach(function (row) {
+        var status = row.dataset.status;
+        var show = (f === 'all') ||
+                   (f === 'clicked'     && (status === 'clicked' || status === 'compromised')) ||
+                   (f === 'compromised' && status === 'compromised') ||
+                   (f === 'reported'    && status === 'reported') ||
+                   (f === 'safe'        && status === 'safe');
+
+        row.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+
+      if (empty) empty.style.display = (visible === 0 && rows.length > 0) ? '' : 'none';
+    });
+  });
+})();
+</script>
+{% endblock %}

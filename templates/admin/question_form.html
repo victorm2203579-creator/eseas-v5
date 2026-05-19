@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}Add Question: {{ module.title }} | ESEAS Admin{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container" style="max-width:680px;">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <a href="{{ url_for('training_admin.module_questions', mid=module.id) }}"
+         class="btn btn-outline-secondary btn-sm">
+        <i class="fa-solid fa-arrow-left"></i>
+      </a>
+      <div>
+        <h4 class="fw-bold mb-0" style="color:var(--navy)">
+          <i class="fa-solid fa-plus me-2" style="color:var(--orange)"></i>Add Question
+        </h4>
+        <p class="text-muted small mb-0">Module: <strong>{{ module.title }}</strong></p>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+        <form method="POST">
+
+          <!-- Question text -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              Question Text <span class="text-danger">*</span>
+            </label>
+            <textarea class="form-control" name="question_text" rows="3" required
+                      placeholder="What should you do if you receive an unexpected password reset email?"></textarea>
+          </div>
+
+          <!-- Options -->
+          <div class="mb-1">
+            <label class="form-label fw-semibold">Answer Options <span class="text-danger">*</span></label>
+          </div>
+          <div class="row g-2 mb-3">
+            {% for letter, placeholder in [
+              ('a', 'Click the link immediately to secure your account'),
+              ('b', 'Ignore it — password resets always expire'),
+              ('c', 'Go directly to the service website and change your password'),
+              ('d', 'Forward the email to IT support only')
+            ] %}
+            <div class="col-12">
+              <div class="input-group">
+                <span class="input-group-text fw-bold"
+                      style="background:var(--navy);color:#fff;min-width:2.5rem;">
+                  {{ letter | upper }}
+                </span>
+                <input type="text" class="form-control" name="option_{{ letter }}" required
+                       placeholder="{{ placeholder }}">
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+
+          <!-- Correct option -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              Correct Answer <span class="text-danger">*</span>
+            </label>
+            <select class="form-select" name="correct_option" required>
+              <option value="">— Select —</option>
+              <option value="a">A</option>
+              <option value="b">B</option>
+              <option value="c">C</option>
+              <option value="d">D</option>
+            </select>
+          </div>
+
+          <!-- Explanation -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Explanation</label>
+            <textarea class="form-control" name="explanation" rows="2"
+                      placeholder="Brief explanation of why the correct answer is right (shown after quiz)."></textarea>
+          </div>
+
+          <!-- Points -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Points</label>
+            <input type="number" class="form-control" name="points"
+                   min="1" max="100" value="20" style="max-width:100px;">
+            <div class="form-text">Default 20. All question points should sum to 100 for a clean score.</div>
+          </div>
+
+          <!-- Submit -->
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-orange">
+              <i class="fa-solid fa-plus me-1"></i>Add Question
+            </button>
+            <a href="{{ url_for('training_admin.module_questions', mid=module.id) }}"
+               class="btn btn-outline-secondary">Cancel</a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pdb
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# Environment variables
+.env
+
+# Flask / SQLite
+instance/
+*.db
+*.sqlite3
+
+# ML model — keep trained model files in git so Railway can use them
+# *.pkl  (do NOT ignore — phishing_model.pkl and label_encoder.pkl must be committed)
+
+# Uploads
+static/uploads/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Build / dist
+dist/
+build/
+*.egg-info/
+
+# Logs
+*.log

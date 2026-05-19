@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+{% block title %}My Profile | ESEAS{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+    <h2 class="fw-bold mb-4" style="color:var(--navy)">
+      <i class="fa-solid fa-circle-user me-2" style="color:var(--orange)"></i>My Profile
+    </h2>
+
+    <div class="row g-4">
+
+      <!-- ── Left column: user info card ── -->
+      <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body text-center p-4">
+
+            <!-- Avatar circle -->
+            <div class="avatar-circle-lg mx-auto mb-3">
+              {{ current_user.avatar_initials }}
+            </div>
+
+            <h5 class="fw-bold mb-1" style="color:var(--navy)">
+              {{ current_user.name }}
+            </h5>
+            <p class="text-muted small mb-2">{{ current_user.email }}</p>
+
+            <!-- Role badge -->
+            {% if current_user.is_admin() %}
+              <span class="badge badge-admin px-3 py-2 mb-3">
+                <i class="fa-solid fa-user-shield me-1"></i>Admin
+              </span>
+            {% else %}
+              <span class="badge bg-secondary px-3 py-2 mb-3">
+                <i class="fa-solid fa-user me-1"></i>User
+              </span>
+            {% endif %}
+
+            <hr />
+
+            <!-- Risk score gauge -->
+            <div class="mb-3">
+              <div class="d-flex justify-content-between small text-muted mb-1">
+                <span><i class="fa-solid fa-triangle-exclamation me-1"></i>Risk Score</span>
+                <span class="fw-bold {{ 'text-danger' if current_user.risk_score > 70
+                                         else ('text-warning' if current_user.risk_score > 40
+                                         else 'text-success') }}">
+                  {{ "%.1f"|format(current_user.risk_score) }}
+                </span>
+              </div>
+              <div class="progress" style="height:10px; border-radius:5px;">
+                <div class="progress-bar
+                  {{ 'bg-danger' if current_user.risk_score > 70
+                     else ('bg-warning' if current_user.risk_score > 40 else 'bg-success') }}"
+                  role="progressbar"
+                  style="width: {{ current_user.risk_score }}%;"
+                  aria-valuenow="{{ current_user.risk_score }}"
+                  aria-valuemin="0" aria-valuemax="100">
+                </div>
+              </div>
+              <small class="text-muted">{{ 'High Risk' if current_user.risk_score > 70
+                                            else ('Medium Risk' if current_user.risk_score > 40
+                                            else 'Low Risk') }}</small>
+            </div>
+
+            <!-- Training completion placeholder -->
+            <div class="mb-3">
+              <div class="d-flex justify-content-between small text-muted mb-1">
+                <span><i class="fa-solid fa-graduation-cap me-1"></i>Training</span>
+                <span class="fw-bold text-info">0%</span>
+              </div>
+              <div class="progress" style="height:10px; border-radius:5px;">
+                <div class="progress-bar bg-info" role="progressbar"
+                     style="width:0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                </div>
+              </div>
+            </div>
+
+            <hr />
+
+            <!-- Stats -->
+            <div class="row text-center g-2">
+              <div class="col-6">
+                <div class="small text-muted">Total Scans</div>
+                <div class="fw-bold" style="color:var(--navy)">0</div>
+              </div>
+              <div class="col-6">
+                <div class="small text-muted">Member Since</div>
+                <div class="fw-bold small" style="color:var(--navy)">
+                  {{ current_user.created_at.strftime('%d %b %Y') }}
+                </div>
+              </div>
+            </div>
+
+            {% if current_user.last_login %}
+            <p class="text-muted small mt-3 mb-0">
+              <i class="fa-solid fa-clock me-1"></i>
+              Last login: {{ current_user.last_login.strftime('%d %b %Y %H:%M') }}
+            </p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Right column: edit form + activity ── -->
+      <div class="col-lg-8">
+
+        <!-- Edit profile form -->
+        <div class="card border-0 shadow-sm mb-4">
+          <div class="card-header py-3" style="background:var(--navy)">
+            <h6 class="text-white mb-0 fw-semibold">
+              <i class="fa-solid fa-pen me-2" style="color:var(--orange)"></i>Edit Profile
+            </h6>
+          </div>
+          <div class="card-body p-4">
+            <form method="POST" action="{{ url_for('auth.profile') }}" novalidate>
+              {{ form.hidden_tag() }}
+
+              <div class="row g-3">
+                <div class="col-md-6">
+                  {{ form.name.label(class='form-label fw-semibold') }}
+                  {{ form.name(class='form-control' +
+                     (' is-invalid' if form.name.errors else '')) }}
+                  {% for err in form.name.errors %}
+                    <div class="invalid-feedback">{{ err }}</div>
+                  {% endfor %}
+                </div>
+                <div class="col-md-6">
+                  {{ form.email.label(class='form-label fw-semibold') }}
+                  {{ form.email(class='form-control' +
+                     (' is-invalid' if form.email.errors else '')) }}
+                  {% for err in form.email.errors %}
+                    <div class="invalid-feedback">{{ err }}</div>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <div class="mt-4">
+                {{ form.submit(class='btn btn-orange px-4') }}
+                <a href="{{ url_for('auth.reset_request') }}"
+                   class="btn btn-outline-secondary ms-2">
+                  <i class="fa-solid fa-key me-1"></i>Change Password
+                </a>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Recent activity (login sessions) -->
+        <div class="card border-0 shadow-sm">
+          <div class="card-header py-3" style="background:var(--navy)">
+            <h6 class="text-white mb-0 fw-semibold">
+              <i class="fa-solid fa-clock-rotate-left me-2" style="color:var(--orange)"></i>
+              Recent Login Activity
+            </h6>
+          </div>
+          <div class="card-body p-0">
+            {% if recent_sessions %}
+              <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th class="ps-3">Date / Time</th>
+                      <th>IP Address</th>
+                      <th>Browser / Agent</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for s in recent_sessions %}
+                    <tr>
+                      <td class="ps-3 small">
+                        {{ s.logged_in_at.strftime('%d %b %Y %H:%M') }}
+                      </td>
+                      <td class="small font-monospace">{{ s.ip_address or '—' }}</td>
+                      <td class="small text-truncate" style="max-width:200px;">
+                        {{ s.user_agent or '—' }}
+                      </td>
+                      <td>
+                        {% if s.logged_out_at %}
+                          <span class="badge bg-secondary">Ended</span>
+                        {% else %}
+                          <span class="badge bg-success">Active</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <p class="text-muted p-4 mb-0">No login history yet.</p>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /row -->
+  </div>
+</section>
+{% endblock %}

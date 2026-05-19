@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}ESEAS — Phishing Simulator{% endblock %}</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+        crossorigin="anonymous" />
+
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Custom CSS (after Bootstrap so variables override) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+{% if current_user.is_authenticated %}
+{# ═══════════════════════════════════════════════════════════
+   AUTHENTICATED LAYOUT — Sidebar + Topbar
+═══════════════════════════════════════════════════════════ #}
+{% set bp = request.blueprint or '' %}
+{% set ep = request.endpoint or '' %}
+
+<!-- Sidebar overlay (mobile) -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar" id="sidebar">
+
+  <!-- Logo -->
+  <a class="sidebar-logo" href="{{ url_for('index') }}">
+    <div class="sidebar-logo-icon">
+      <i class="fa-solid fa-shield-halved"></i>
+    </div>
+    <div class="sidebar-logo-text">
+      <span class="sidebar-logo-name">ESEAS</span>
+      <span class="sidebar-logo-version">v5 · Security</span>
+    </div>
+  </a>
+
+  <!-- Navigation -->
+  <nav class="sidebar-nav">
+
+    {# ── OVERVIEW ── #}
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Overview</div>
+
+      {% if current_user.role == 'admin' %}
+      <a href="{{ url_for('admin_dash.admin_dashboard') }}"
+         class="sidebar-link {% if bp == 'admin_dash' %}active{% endif %}"
+         title="Dashboard"
+         {% if bp == 'admin_dash' %}aria-current="page"{% endif %}>
+        <i class="fa-solid fa-gauge"></i><span class="sidebar-link-text">Dashboard</span>
+      </a>
+      {% else %}
+      <a href="{{ url_for('user_dash.user_dashboard') }}"
+         class="sidebar-link {% if bp == 'user_dash' %}active{% endif %}"
+         title="Dashboard"
+         {% if bp == 'user_dash' %}aria-current="page"{% endif %}>
+        <i class="fa-solid fa-gauge"></i><span class="sidebar-link-text">Dashboard</span>
+      </a>
+      {% endif %}
+    </div>
+
+    {# ── ANALYSIS ── #}
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Analysis</div>
+      <a href="{{ url_for('analyzer.index') }}"
+         class="sidebar-link {% if bp == 'analyzer' and ep == 'analyzer.index' %}active{% endif %}"
+         title="URL Scanner">
+        <i class="fa-solid fa-magnifying-glass"></i><span class="sidebar-link-text">URL Scanner</span>
+      </a>
+      <a href="{{ url_for('analyzer.history') }}"
+         class="sidebar-link {% if bp == 'analyzer' and ep == 'analyzer.history' %}active{% endif %}"
+         title="Scan History">
+        <i class="fa-solid fa-clock-rotate-left"></i><span class="sidebar-link-text">Scan History</span>
+      </a>
+    </div>
+
+    {# ── SIMULATION (admin only) ── #}
+    {% if current_user.role == 'admin' %}
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Simulation</div>
+      <a href="{{ url_for('simulator.index') }}"
+         class="sidebar-link {% if bp == 'simulator' and ep in ('simulator.index', 'simulator.campaign_detail', 'simulator.campaign_results', 'simulator.new_campaign') %}active{% endif %}"
+         title="Campaigns">
+        <i class="fa-solid fa-crosshairs"></i><span class="sidebar-link-text">Campaigns</span>
+      </a>
+      <a href="{{ url_for('simulator.templates') }}"
+         class="sidebar-link {% if bp == 'simulator' and ep in ('simulator.templates', 'simulator.new_template', 'simulator.edit_template', 'simulator.preview_template') %}active{% endif %}"
+         title="Templates">
+        <i class="fa-solid fa-file-code"></i><span class="sidebar-link-text">Templates</span>
+      </a>
+    </div>
+    {% endif %}
+
+    {# ── TRAINING ── #}
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Training</div>
+      <a href="{{ url_for('training.index') }}"
+         class="sidebar-link {% if bp in ('training', 'training_admin') and ep not in ('training.badges', 'training.leaderboard', 'training.certificate') %}active{% endif %}"
+         title="Modules">
+        <i class="fa-solid fa-graduation-cap"></i><span class="sidebar-link-text">Modules</span>
+      </a>
+      <a href="{{ url_for('training.badges') }}"
+         class="sidebar-link {% if ep == 'training.badges' %}active{% endif %}"
+         title="Badges">
+        <i class="fa-solid fa-trophy"></i><span class="sidebar-link-text">Badges</span>
+      </a>
+      <a href="{{ url_for('training.leaderboard') }}"
+         class="sidebar-link {% if ep == 'training.leaderboard' %}active{% endif %}"
+         title="Leaderboard">
+        <i class="fa-solid fa-ranking-star"></i><span class="sidebar-link-text">Leaderboard</span>
+      </a>
+    </div>
+
+    {# ── REPORTS (admin only) ── #}
+    {% if current_user.role == 'admin' %}
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Reports</div>
+      <a href="{{ url_for('reports.index') }}"
+         class="sidebar-link {% if bp == 'reports' %}active{% endif %}"
+         title="Reports"
+         {% if bp == 'reports' %}aria-current="page"{% endif %}>
+        <i class="fa-solid fa-file-lines"></i><span class="sidebar-link-text">Reports</span>
+      </a>
+    </div>
+    {% endif %}
+
+    {# ── SYSTEM (admin only) ── #}
+    {% if current_user.role == 'admin' %}
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">System</div>
+      <a href="{{ url_for('admin_bp.users') }}"
+         class="sidebar-link {% if bp == 'admin_bp' %}active{% endif %}"
+         title="Manage Users">
+        <i class="fa-solid fa-users"></i><span class="sidebar-link-text">Manage Users</span>
+      </a>
+    </div>
+    {% endif %}
+
+  </nav>
+
+  <!-- Logout button -->
+  <a href="{{ url_for('auth.logout') }}" class="sidebar-signout-btn" title="Sign Out">
+    <i class="fa-solid fa-right-from-bracket"></i><span class="sidebar-link-text">Sign Out</span>
+  </a>
+
+  <!-- User footer -->
+  <div class="sidebar-user">
+    <div class="sidebar-avatar" title="{{ current_user.name }}">{{ current_user.avatar_initials }}</div>
+    <div class="sidebar-user-info">
+      <a href="{{ url_for('auth.profile') }}" class="sidebar-user-name-link">
+        <div class="sidebar-user-name">{{ current_user.name }}</div>
+        <div class="sidebar-user-role">{{ 'Administrator' if current_user.role == 'admin' else 'Staff User' }}</div>
+      </a>
+    </div>
+  </div>
+
+</aside>
+
+<!-- ===== TOPBAR ===== -->
+<header class="topbar">
+
+  <!-- Mobile hamburger -->
+  <button class="topbar-hamburger" id="hamburgerBtn" onclick="openSidebar()" aria-label="Open menu">
+    <i class="fa-solid fa-bars"></i>
+  </button>
+
+  <!-- Desktop sidebar collapse toggle -->
+  <button class="topbar-collapse-btn" id="collapseBtn" onclick="toggleSidebarCollapse()" aria-label="Toggle sidebar" title="Toggle sidebar">
+    <i class="fa-solid fa-bars" id="collapseBtnIcon"></i>
+  </button>
+
+  <!-- Page title -->
+  <span class="topbar-title">{% block page_title %}ESEAS{% endblock %}</span>
+
+  <!-- Quick URL scan -->
+  <form class="topbar-scan" id="quickScanForm" onsubmit="quickScan(event)">
+    <input type="text" id="quickScanUrl" placeholder="Scan a URL…" autocomplete="off" />
+    <button type="submit"><i class="fa-solid fa-search me-1"></i>Scan</button>
+  </form>
+
+  <div class="topbar-right">
+
+    <!-- Notification bell -->
+    <button class="notif-btn" id="notifBtn" onclick="toggleNotifications()" aria-label="Notifications">
+      <i class="fa-solid fa-bell"></i>
+      <span class="notif-badge" id="notifBadge" style="display:none;"></span>
+    </button>
+
+    <!-- Profile shortcut -->
+    <a href="{{ url_for('auth.profile') }}" class="topbar-avatar" title="{{ current_user.name }}">
+      {{ current_user.avatar_initials }}
+    </a>
+
+  </div>
+</header>
+
+<!-- Notification dropdown -->
+<div class="notif-dropdown" id="notifDropdown">
+  <div class="notif-dropdown-header">
+    <span>Notifications</span>
+    <button class="notif-mark-all" onclick="markAllRead()">Mark all read</button>
+  </div>
+  <div class="notif-list" id="notifList">
+    <div class="notif-empty">Loading…</div>
+  </div>
+</div>
+
+<!-- ===== MAIN CONTENT ===== -->
+<div class="main-content">
+  <main>
+
+{% else %}
+{# ═══════════════════════════════════════════════════════════
+   UNAUTHENTICATED LAYOUT — Minimal top navbar
+═══════════════════════════════════════════════════════════ #}
+{% set bp = request.blueprint or '' %}
+{% set ep = request.endpoint or '' %}
+
+<nav class="navbar navbar-expand-lg navbar-custom">
+  <div class="container">
+    <a class="navbar-brand text-white fw-bold" href="{{ url_for('index') }}">
+      <i class="fa-solid fa-shield-halved me-2" style="color:var(--accent)"></i>ESEAS
+    </a>
+    <button class="navbar-toggler border-secondary" type="button"
+            data-bs-toggle="collapse" data-bs-target="#mainNav"
+            aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="mainNav">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link {% if ep == 'index' %}nav-active{% endif %}"
+             href="{{ url_for('index') }}">
+            <i class="fa-solid fa-house me-1"></i>Home
+          </a>
+        </li>
+      </ul>
+      <ul class="navbar-nav mb-2 mb-lg-0 align-items-lg-center">
+        <li class="nav-item">
+          <a class="nav-link {% if ep == 'auth.login' %}nav-active{% endif %}"
+             href="{{ url_for('auth.login') }}">
+            <i class="fa-solid fa-right-to-bracket me-1"></i>Login
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="btn btn-orange btn-sm ms-2" href="{{ url_for('auth.register') }}">
+            <i class="fa-solid fa-user-plus me-1"></i>Register
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<main>
+
+{% endif %}
+
+{% block content %}{% endblock %}
+
+{% if current_user.is_authenticated %}
+  </main>
+
+  <footer>
+    <div class="container-fluid">
+      <i class="fa-solid fa-shield-halved me-1" style="color:var(--accent)"></i>
+      <strong>ESEAS</strong> — Enhanced Social Engineering Attack Simulator &copy; 2026
+      &middot; Final Year Cybersecurity Project
+    </div>
+  </footer>
+</div>
+
+{% else %}
+</main>
+
+<footer>
+  <div class="container">
+    <i class="fa-solid fa-shield-halved me-1" style="color:var(--accent)"></i>
+    <strong>ESEAS</strong> — Enhanced Social Engineering Attack Simulator &copy; 2026
+    <br><span style="color:var(--text-muted);font-size:.72rem;">Final Year Cybersecurity Project &middot; Phishing Link Analysis</span>
+  </div>
+</footer>
+
+{% endif %}
+
+{# ── Toast stack (always present) ── #}
+<div id="toast-stack"></div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
+
+<!-- Custom JS -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+<script>
+/* ── Toast System ─────────────────────────────────────── */
+function showToast(type, title, message) {
+  var colors = {
+    success: { icon: 'fa-circle-check',   bg: 'rgba(16,185,129,.15)',  color: '#10b981' },
+    danger:  { icon: 'fa-circle-xmark',   bg: 'rgba(239,68,68,.15)',   color: '#ef4444' },
+    warning: { icon: 'fa-triangle-exclamation', bg: 'rgba(245,158,11,.15)', color: '#f59e0b' },
+    info:    { icon: 'fa-circle-info',    bg: 'rgba(59,130,246,.15)',  color: '#3b82f6' },
+  };
+  var c = colors[type] || colors.info;
+  var el = document.createElement('div');
+  el.className = 'eseas-toast';
+  el.innerHTML =
+    '<div class="eseas-toast-icon" style="background:' + c.bg + ';color:' + c.color + '">' +
+      '<i class="fa-solid ' + c.icon + '"></i>' +
+    '</div>' +
+    '<div class="eseas-toast-body">' +
+      '<div class="eseas-toast-title">' + (title || '') + '</div>' +
+      '<div class="eseas-toast-msg">' + (message || '') + '</div>' +
+    '</div>' +
+    '<button class="eseas-toast-close" onclick="this.closest(\'.eseas-toast\').remove()">' +
+      '<i class="fa-solid fa-xmark"></i>' +
+    '</button>';
+  document.getElementById('toast-stack').appendChild(el);
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () { el.classList.add('show'); });
+  });
+  setTimeout(function () {
+    el.classList.remove('show');
+    setTimeout(function () { el.remove(); }, 300);
+  }, 5000);
+}
+
+/* ── Convert Flask flash messages to toasts ─────────────── */
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+(function () {
+  var msgs = {{ messages | tojson }};
+  msgs.forEach(function (m) {
+    var cat = m[0], msg = m[1];
+    var labels = { success: 'Success', danger: 'Error', warning: 'Warning', info: 'Information' };
+    showToast(cat, labels[cat] || 'Notice', msg);
+  });
+})();
+{% endif %}
+{% endwith %}
+
+/* ── Sidebar toggle (mobile) ─────────────────────────────── */
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebarOverlay').classList.add('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+}
+
+/* ── Desktop sidebar collapse ────────────────────────────── */
+(function () {
+  if (localStorage.getItem('sidebarCollapsed') === '1') {
+    document.body.classList.add('sidebar-collapsed');
+    var icon = document.getElementById('collapseBtnIcon');
+    if (icon) icon.className = 'fa-solid fa-bars-staggered';
+  }
+})();
+
+function toggleSidebarCollapse() {
+  var collapsed = document.body.classList.toggle('sidebar-collapsed');
+  localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0');
+  var icon = document.getElementById('collapseBtnIcon');
+  if (icon) icon.className = collapsed ? 'fa-solid fa-bars-staggered' : 'fa-solid fa-bars';
+}
+
+/* ── Quick URL scan ──────────────────────────────────────── */
+function quickScan(e) {
+  e.preventDefault();
+  var url = document.getElementById('quickScanUrl').value.trim();
+  if (!url) return;
+  showToast('info', 'Scanning…', url.length > 50 ? url.slice(0, 50) + '…' : url);
+  fetch('/analyzer/quick-scan', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url: url })
+  })
+  .then(function (r) { return r.json(); })
+  .then(function (d) {
+    var t = d.label === 'Safe' ? 'success' : (d.label === 'Suspicious' ? 'warning' : 'danger');
+    showToast(t, d.label || 'Result', 'Risk score: ' + (d.risk_score || 0) + '/100');
+    document.getElementById('quickScanUrl').value = '';
+  })
+  .catch(function () {
+    showToast('danger', 'Scan failed', 'Could not reach the scanner. Try the full scanner page.');
+  });
+}
+
+/* ── Notifications ───────────────────────────────────────── */
+var _notifOpen = false;
+
+function toggleNotifications() {
+  _notifOpen = !_notifOpen;
+  document.getElementById('notifDropdown').classList.toggle('open', _notifOpen);
+  if (_notifOpen) loadNotifications();
+}
+
+document.addEventListener('click', function (e) {
+  if (_notifOpen &&
+      !e.target.closest('#notifBtn') &&
+      !e.target.closest('#notifDropdown')) {
+    _notifOpen = false;
+    document.getElementById('notifDropdown').classList.remove('open');
+  }
+});
+
+function loadNotifications() {
+  fetch('/api/notifications')
+    .then(function (r) {
+      if (!r.ok) throw new Error('not ok');
+      return r.json();
+    })
+    .then(function (data) {
+      var list = document.getElementById('notifList');
+      var badge = document.getElementById('notifBadge');
+      var unread = data.filter(function (n) { return !n.is_read; }).length;
+      badge.style.display = unread > 0 ? '' : 'none';
+
+      if (!data.length) {
+        list.innerHTML = '<div class="notif-empty"><i class="fa-solid fa-bell-slash opacity-40 d-block mb-2" style="font-size:1.5rem;"></i>No notifications yet</div>';
+        return;
+      }
+      list.innerHTML = data.map(function (n) {
+        return '<a class="notif-item ' + (n.is_read ? '' : 'unread') + '" ' +
+          'href="' + (n.link || '#') + '" onclick="markRead(' + n.id + ')">' +
+          '<div class="notif-dot ' + (n.is_read ? 'read' : '') + '"></div>' +
+          '<div class="notif-content">' +
+            '<div class="notif-title">' + escHtml(n.title) + '</div>' +
+            '<div class="notif-msg">' + escHtml(n.message) + '</div>' +
+            '<div class="notif-time">' + timeAgo(n.created_at) + '</div>' +
+          '</div>' +
+        '</a>';
+      }).join('');
+    })
+    .catch(function () {
+      document.getElementById('notifList').innerHTML =
+        '<div class="notif-empty">Could not load notifications.</div>';
+    });
+}
+
+function markRead(id) {
+  fetch('/api/notifications/' + id + '/read', { method: 'POST' }).catch(function () {});
+}
+
+function markAllRead() {
+  fetch('/api/notifications/read-all', { method: 'POST' })
+    .then(function () { loadNotifications(); })
+    .catch(function () {});
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function timeAgo(iso) {
+  if (!iso) return '';
+  var diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (diff < 60)   return 'just now';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  return Math.floor(diff/86400) + 'd ago';
+}
+
+// Poll notifications every 60 seconds
+{% if current_user.is_authenticated %}
+setInterval(function () {
+  fetch('/api/notifications')
+    .then(function (r) { if (r.ok) return r.json(); })
+    .then(function (data) {
+      if (!data) return;
+      var unread = data.filter(function (n) { return !n.is_read; }).length;
+      document.getElementById('notifBadge').style.display = unread > 0 ? '' : 'none';
+    })
+    .catch(function () {});
+}, 60000);
+{% endif %}
+</script>
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

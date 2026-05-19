@@ -1,0 +1,308 @@
+{% extends 'base.html' %}
+{% block title %}Scan History | ESEAS{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+      <div>
+        <h2 class="fw-bold mb-0" style="color:var(--navy)">
+          <i class="fa-solid fa-clock-rotate-left me-2" style="color:var(--orange)"></i>Scan History
+        </h2>
+        <p class="text-muted small mb-0">Your URL scan records, newest first.</p>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="{{ url_for('analyzer.index') }}" class="btn btn-orange btn-sm">
+          <i class="fa-solid fa-magnifying-glass me-1"></i>New Scan
+        </a>
+        <a href="{{ url_for('analyzer.export') }}" class="btn btn-sm btn-outline-secondary">
+          <i class="fa-solid fa-file-csv me-1"></i>Export CSV
+        </a>
+      </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body py-3">
+        <form method="GET" action="{{ url_for('analyzer.history') }}"
+              class="row g-2 align-items-center">
+
+          <div class="col-md-5">
+            <div class="input-group">
+              <span class="input-group-text bg-light">
+                <i class="fa-solid fa-search text-muted"></i>
+              </span>
+              <input type="text" name="q" value="{{ search }}"
+                     class="form-control" placeholder="Search by URL…" />
+            </div>
+          </div>
+
+          <div class="col-md-auto">
+            <div class="btn-group" role="group">
+              <a href="{{ url_for('analyzer.history', q=search) }}"
+                 class="btn btn-sm {{ 'btn-secondary' if not label_filter else 'btn-outline-secondary' }}">
+                All
+              </a>
+              <a href="{{ url_for('analyzer.history', label='Safe', q=search) }}"
+                 class="btn btn-sm {{ 'btn-success' if label_filter=='Safe' else 'btn-outline-success' }}">
+                Safe
+              </a>
+              <a href="{{ url_for('analyzer.history', label='Suspicious', q=search) }}"
+                 class="btn btn-sm {{ 'btn-warning' if label_filter=='Suspicious' else 'btn-outline-warning' }}">
+                Suspicious
+              </a>
+              <a href="{{ url_for('analyzer.history', label='Dangerous', q=search) }}"
+                 class="btn btn-sm {{ 'btn-danger' if label_filter=='Dangerous' else 'btn-outline-danger' }}">
+                Dangerous
+              </a>
+            </div>
+          </div>
+
+          <div class="col-md-auto">
+            <button type="submit" class="btn btn-sm btn-orange">
+              <i class="fa-solid fa-filter me-1"></i>Filter
+            </button>
+            {% if search or label_filter %}
+            <a href="{{ url_for('analyzer.history') }}" class="btn btn-sm btn-outline-secondary ms-1">
+              <i class="fa-solid fa-xmark me-1"></i>Clear
+            </a>
+            {% endif %}
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-0">
+        {% if scans %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead style="background:var(--navy); color:#fff;">
+              <tr>
+                <th class="ps-4 py-3">URL</th>
+                <th>Risk Score</th>
+                <th>Label</th>
+                <th>Date</th>
+                <th class="text-center pe-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for scan in scans %}
+              <tr id="row-{{ scan.id }}">
+                <!-- URL -->
+                <td class="ps-4" style="max-width:320px;">
+                  <div class="text-truncate small font-monospace" title="{{ scan.url }}">
+                    {{ scan.short_url }}
+                  </div>
+                </td>
+
+                <!-- Score bar -->
+                <td style="min-width:130px;">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="progress flex-grow-1" style="height:8px;">
+                      <div class="progress-bar bg-{{ scan.risk_color }}"
+                           style="width:{{ scan.final_score }}%"></div>
+                    </div>
+                    <span class="small fw-bold text-{{ scan.risk_color }}">
+                      {{ "%.0f"|format(scan.final_score) }}
+                    </span>
+                  </div>
+                </td>
+
+                <!-- Label badge -->
+                <td>
+                  <span class="badge bg-{{ scan.risk_color }}">
+                    <i class="fa-solid {{ scan.risk_icon }} me-1"></i>
+                    {{ scan.final_label }}
+                  </span>
+                </td>
+
+                <!-- Date -->
+                <td class="small text-muted">
+                  {{ scan.scanned_at.strftime('%d %b %Y %H:%M') }}
+                </td>
+
+                <!-- Actions -->
+                <td class="text-center pe-4">
+                  <div class="d-flex gap-1 justify-content-center">
+                    <button class="btn btn-sm btn-outline-primary why-btn"
+                            data-id="{{ scan.id }}" title="Why this score?">
+                      <i class="fa-solid fa-circle-question me-1"></i>Why?
+                    </button>
+                    <a href="{{ url_for('analyzer.detail', scan_id=scan.id) }}"
+                       class="btn btn-sm btn-outline-secondary" title="View details">
+                      <i class="fa-solid fa-eye"></i>
+                    </a>
+                    <button class="btn btn-sm btn-outline-danger delete-btn"
+                            data-id="{{ scan.id }}"
+                            title="Delete">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <div class="d-flex justify-content-center py-4">
+          <nav>
+            <ul class="pagination pagination-sm mb-0">
+              {% if pagination.has_prev %}
+              <li class="page-item">
+                <a class="page-link" href="{{ url_for('analyzer.history',
+                     page=pagination.prev_num, label=label_filter, q=search) }}">
+                  &laquo;
+                </a>
+              </li>
+              {% endif %}
+
+              {% for p in pagination.iter_pages(left_edge=1, right_edge=1,
+                                                 left_current=2, right_current=2) %}
+                {% if p %}
+                  <li class="page-item {{ 'active' if p == pagination.page else '' }}">
+                    <a class="page-link" href="{{ url_for('analyzer.history',
+                         page=p, label=label_filter, q=search) }}">{{ p }}</a>
+                  </li>
+                {% else %}
+                  <li class="page-item disabled"><span class="page-link">…</span></li>
+                {% endif %}
+              {% endfor %}
+
+              {% if pagination.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="{{ url_for('analyzer.history',
+                     page=pagination.next_num, label=label_filter, q=search) }}">
+                  &raquo;
+                </a>
+              </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center text-muted py-5">
+          <i class="fa-solid fa-magnifying-glass fa-2x mb-3 d-block opacity-25"></i>
+          {% if search or label_filter %}
+            No scans match your filter.
+            <a href="{{ url_for('analyzer.history') }}" style="color:var(--orange)">Clear filters</a>
+          {% else %}
+            You haven't scanned any URLs yet.
+            <a href="{{ url_for('analyzer.index') }}" style="color:var(--orange)">Scan your first URL →</a>
+          {% endif %}
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Explanation Modal -->
+<div class="modal fade" id="whyModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">
+          <i class="fa-solid fa-circle-question me-2" style="color:var(--orange)"></i>Why This Score?
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="whyModalBody">
+        <div class="text-center py-4">
+          <div class="spinner-border" style="color:var(--orange);" role="status"></div>
+          <p class="mt-2 text-muted small">Loading explanation…</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <a id="whyDetailLink" href="#" class="btn btn-sm btn-orange">
+          <i class="fa-solid fa-eye me-1"></i>Full Details
+        </a>
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const whyModal   = new bootstrap.Modal(document.getElementById('whyModal'));
+const whyBody    = document.getElementById('whyModalBody');
+const detailLink = document.getElementById('whyDetailLink');
+
+document.querySelectorAll('.why-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const id = btn.dataset.id;
+    detailLink.href = `/analyzer/scan/${id}`;
+    whyBody.innerHTML = `<div class="text-center py-4">
+      <div class="spinner-border" style="color:var(--orange);" role="status"></div>
+      <p class="mt-2 text-muted small">Loading explanation…</p></div>`;
+    whyModal.show();
+
+    try {
+      const resp = await fetch(`/analyzer/scan/${id}/explanation`);
+      const data = await resp.json();
+      const expl = data.explanation || {};
+      const colorMap = { danger: 'danger', warning: 'warning', success: 'success' };
+      const c = data.risk_color || 'secondary';
+
+      let topFlags = '';
+      if (expl.triggered_flags && expl.triggered_flags.length) {
+        const top = expl.triggered_flags.slice(0, 3);
+        topFlags = `<ul class="list-group list-group-flush mt-3">` +
+          top.map(f => {
+            const sc = f.severity === 'high' ? 'danger' : f.severity === 'medium' ? 'warning' : 'secondary';
+            return `<li class="list-group-item px-0 py-2 border-0 border-bottom">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="fw-semibold small">${f.feature}</span>
+                <span class="badge bg-${sc} ms-auto">${f.severity.toUpperCase()}</span>
+                <span class="font-monospace small text-muted">${f.value}</span>
+              </div>
+              <p class="mb-0 small text-muted">${f.explanation}</p>
+            </li>`;
+          }).join('') + `</ul>`;
+      }
+
+      whyBody.innerHTML = `
+        <div class="alert alert-${c} border-0 mb-3">
+          <p class="fw-bold mb-1">${data.url || ''}</p>
+          <p class="mb-0">${expl.verdict_summary || 'No explanation available.'}</p>
+          ${expl.risk_factors_count !== undefined
+            ? `<small class="opacity-75">${expl.risk_factors_count} risk factors · ${expl.clean_factors_count} clean</small>`
+            : ''}
+        </div>
+        ${expl.triggered_flags && expl.triggered_flags.length
+          ? `<h6 class="fw-bold text-danger mb-0">Top Risk Flags</h6>${topFlags}`
+          : '<p class="text-success small"><i class="fa-solid fa-circle-check me-1"></i>No significant risk factors detected.</p>'}
+        ${expl.advice
+          ? `<div class="alert alert-${c} border-0 mt-3 mb-0 small"><strong>Advice:</strong> ${expl.advice}</div>`
+          : ''}`;
+    } catch (e) {
+      whyBody.innerHTML = '<p class="text-muted p-3">Could not load explanation. Try the full details page.</p>';
+    }
+  });
+});
+
+document.querySelectorAll('.delete-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    if (!confirm('Delete this scan record?')) return;
+    const id = btn.dataset.id;
+    const resp = await fetch(`/analyzer/scan/${id}`, { method: 'DELETE' });
+    if (resp.ok) {
+      document.getElementById(`row-${id}`)?.remove();
+    }
+  });
+});
+</script>
+{% endblock %}

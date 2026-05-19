@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+{% block title %}User Management | ESEAS Admin{% endblock %}
+{% block page_title %}Manage Users{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container-fluid px-4">
+
+    <!-- Page header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="fw-bold mb-0" style="color:var(--navy)">
+          <i class="fa-solid fa-users me-2" style="color:var(--orange)"></i>User Management
+        </h2>
+        <p class="text-muted small mb-0">{{ users|length }} registered account(s)</p>
+      </div>
+    </div>
+
+    <!-- Filter / search bar -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body py-3">
+        <div class="row g-2 align-items-center">
+          <div class="col-md-5">
+            <div class="input-group">
+              <span class="input-group-text bg-light"><i class="fa-solid fa-search text-muted"></i></span>
+              <input type="text" id="userSearch" class="form-control"
+                     placeholder="Search by name or email…" />
+            </div>
+          </div>
+          <div class="col-md-3">
+            <select id="roleFilter" class="form-select">
+              <option value="">All Roles</option>
+              <option value="admin">Admin</option>
+              <option value="user">User</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <select id="statusFilter" class="form-select">
+              <option value="">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Users table -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0" id="usersTable">
+            <thead style="background:var(--navy); color:#fff;">
+              <tr>
+                <th class="ps-4 py-3">User</th>
+                <th>Role</th>
+                <th>Risk Score</th>
+                <th>Training</th>
+                <th>Last Login</th>
+                <th>Status</th>
+                <th class="text-center pe-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for u in users %}
+              <tr class="user-row"
+                  data-name="{{ u.name|lower }}"
+                  data-email="{{ u.email|lower }}"
+                  data-role="{{ u.role }}"
+                  data-status="{{ 'active' if u.is_active else 'inactive' }}">
+
+                <!-- User info -->
+                <td class="ps-4">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="avatar-circle-sm">{{ u.avatar_initials }}</div>
+                    <div>
+                      <div class="fw-semibold" style="color:var(--navy)">{{ u.name }}</div>
+                      <div class="text-muted small">{{ u.email }}</div>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Role -->
+                <td>
+                  {% if u.role == 'admin' %}
+                    <span class="badge badge-admin">
+                      <i class="fa-solid fa-user-shield me-1"></i>Admin
+                    </span>
+                  {% else %}
+                    <span class="badge bg-secondary">
+                      <i class="fa-solid fa-user me-1"></i>User
+                    </span>
+                  {% endif %}
+                </td>
+
+                <!-- Risk score -->
+                <td style="min-width:130px;">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="progress flex-grow-1" style="height:8px;">
+                      <div class="progress-bar
+                        {{ 'bg-danger' if u.risk_score > 70
+                           else ('bg-warning' if u.risk_score > 40 else 'bg-success') }}"
+                        style="width:{{ u.risk_score }}%"></div>
+                    </div>
+                    <span class="small fw-bold
+                      {{ 'text-danger' if u.risk_score > 70
+                         else ('text-warning' if u.risk_score > 40 else 'text-success') }}">
+                      {{ "%.0f"|format(u.risk_score) }}
+                    </span>
+                  </div>
+                </td>
+
+                <!-- Training % placeholder -->
+                <td><span class="text-muted small">0%</span></td>
+
+                <!-- Last login -->
+                <td class="small text-muted">
+                  {% if u.last_login %}
+                    {{ u.last_login.strftime('%d %b %Y') }}
+                  {% else %}
+                    Never
+                  {% endif %}
+                </td>
+
+                <!-- Active status -->
+                <td>
+                  {% if u.is_active %}
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2">
+                      <i class="fa-solid fa-circle-check me-1"></i>Active
+                    </span>
+                  {% else %}
+                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2">
+                      <i class="fa-solid fa-circle-xmark me-1"></i>Inactive
+                    </span>
+                  {% endif %}
+                </td>
+
+                <!-- Actions -->
+                <td class="text-center pe-4">
+                  <div class="d-flex gap-1 justify-content-center">
+
+                    <!-- View profile -->
+                    <a href="{{ url_for('admin_bp.user_profile', user_id=u.id) }}"
+                       class="btn btn-sm btn-outline-secondary" title="View Profile">
+                      <i class="fa-solid fa-eye"></i>
+                    </a>
+
+                    <!-- Toggle active (not self) -->
+                    {% if u.id != current_user.id %}
+                    <form method="POST"
+                          action="{{ url_for('admin_bp.toggle_user', user_id=u.id) }}"
+                          class="d-inline">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                      <button type="submit"
+                              class="btn btn-sm {{ 'btn-outline-danger' if u.is_active else 'btn-outline-success' }}"
+                              title="{{ 'Deactivate' if u.is_active else 'Activate' }}"
+                              onclick="return confirm('{{ 'Deactivate' if u.is_active else 'Activate' }} {{ u.name }}?')">
+                        <i class="fa-solid {{ 'fa-user-slash' if u.is_active else 'fa-user-check' }}"></i>
+                      </button>
+                    </form>
+
+                    <!-- Change role -->
+                    <form method="POST"
+                          action="{{ url_for('admin_bp.change_role', user_id=u.id) }}"
+                          class="d-inline">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                      <input type="hidden" name="role"
+                             value="{{ 'user' if u.role == 'admin' else 'admin' }}" />
+                      <button type="submit"
+                              class="btn btn-sm btn-outline-warning"
+                              title="Make {{ 'User' if u.role == 'admin' else 'Admin' }}"
+                              onclick="return confirm('Change {{ u.name }} to {{ 'user' if u.role == 'admin' else 'admin' }} role?')">
+                        <i class="fa-solid {{ 'fa-arrow-down-from-line' if u.role == 'admin' else 'fa-arrow-up-from-line' }}"></i>
+                      </button>
+                    </form>
+                    {% else %}
+                    <span class="text-muted small">(you)</span>
+                    {% endif %}
+
+                  </div>
+                </td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="7" class="text-center text-muted py-5">
+                  <i class="fa-solid fa-users-slash fa-2x mb-2 d-block"></i>
+                  No users found.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function filterTable() {
+    const search = document.getElementById('userSearch').value.toLowerCase();
+    const role   = document.getElementById('roleFilter').value;
+    const status = document.getElementById('statusFilter').value;
+
+    document.querySelectorAll('.user-row').forEach(row => {
+      const matchSearch = !search ||
+        row.dataset.name.includes(search) ||
+        row.dataset.email.includes(search);
+      const matchRole   = !role   || row.dataset.role   === role;
+      const matchStatus = !status || row.dataset.status === status;
+
+      row.style.display = (matchSearch && matchRole && matchStatus) ? '' : 'none';
+    });
+  }
+
+  document.getElementById('userSearch').addEventListener('input', filterTable);
+  document.getElementById('roleFilter').addEventListener('change', filterTable);
+  document.getElementById('statusFilter').addEventListener('change', filterTable);
+</script>
+{% endblock %}

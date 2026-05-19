@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% block title %}Campaigns | ESEAS{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+      <div>
+        <h2 class="fw-bold mb-0" style="color:var(--navy)">
+          <i class="fa-solid fa-crosshairs me-2" style="color:var(--orange)"></i>Phishing Simulator
+        </h2>
+        <p class="text-muted small mb-0">Create and manage controlled phishing simulation campaigns.</p>
+      </div>
+      <a href="{{ url_for('simulator.new_campaign') }}" class="btn btn-orange btn-sm">
+        <i class="fa-solid fa-plus me-1"></i>New Campaign
+      </a>
+    </div>
+
+    <!-- Summary stats -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3" style="border-top:3px solid var(--orange);">
+          <h3 class="fw-bold mb-0" style="color:var(--navy)">{{ total_campaigns }}</h3>
+          <p class="text-muted small mb-0">Total Campaigns</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3" style="border-top:3px solid #0d6efd;">
+          <h3 class="fw-bold mb-0 text-primary">{{ total_targets }}</h3>
+          <p class="text-muted small mb-0">Total Targets</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3" style="border-top:3px solid #dc3545;">
+          <h3 class="fw-bold mb-0 text-danger">{{ overall_rate }}%</h3>
+          <p class="text-muted small mb-0">Overall Click Rate</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3" style="border-top:3px solid #198754;">
+          <h3 class="fw-bold mb-0 text-success">
+            {{ campaigns | selectattr('status', 'equalto', 'completed') | list | length }}
+          </h3>
+          <p class="text-muted small mb-0">Completed</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Campaigns table -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-0">
+        {% if campaigns %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead style="background:var(--navy); color:#fff;">
+              <tr>
+                <th class="ps-4 py-3">Campaign</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Targets</th>
+                <th>Click Rate</th>
+                <th>Created</th>
+                <th class="text-center pe-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in campaigns %}
+              <tr id="camp-{{ c.id }}">
+                <td class="ps-4">
+                  <div class="fw-semibold small">{{ c.name }}</div>
+                  {% if c.description %}
+                  <div class="text-muted" style="font-size:.75rem;">
+                    {{ c.description[:60] }}{% if c.description|length > 60 %}…{% endif %}
+                  </div>
+                  {% endif %}
+                </td>
+                <td class="small">{{ c.template_label }}</td>
+                <td>
+                  <span class="badge bg-{{ c.status_color }}">{{ c.status|capitalize }}</span>
+                </td>
+                <td class="small">{{ c.target_count }}</td>
+                <td>
+                  {% if c.sent_count > 0 %}
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="progress flex-grow-1" style="height:6px; min-width:60px;">
+                      <div class="progress-bar bg-danger" style="width:{{ c.click_rate }}%"></div>
+                    </div>
+                    <span class="small fw-bold text-danger">{{ c.click_rate }}%</span>
+                  </div>
+                  {% else %}
+                  <span class="text-muted small">—</span>
+                  {% endif %}
+                </td>
+                <td class="small text-muted text-nowrap">
+                  {{ c.created_at.strftime('%d %b %Y') }}
+                </td>
+                <td class="text-center pe-4">
+                  <div class="d-flex gap-1 justify-content-center">
+                    <a href="{{ url_for('simulator.campaign_detail', cid=c.id) }}"
+                       class="btn btn-sm btn-outline-secondary" title="View">
+                      <i class="fa-solid fa-eye"></i>
+                    </a>
+                    <button class="btn btn-sm btn-outline-danger del-camp-btn"
+                            data-id="{{ c.id }}" title="Delete">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-5">
+          <i class="fa-solid fa-crosshairs fa-2x mb-3 d-block opacity-25"></i>
+          No campaigns yet.
+          <a href="{{ url_for('simulator.new_campaign') }}" style="color:var(--orange)">
+            Create your first campaign →
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.querySelectorAll('.del-camp-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    if (!confirm('Delete this campaign and all its targets?')) return;
+    const id   = btn.dataset.id;
+    const resp = await fetch(`/simulator/campaigns/${id}`, { method: 'DELETE' });
+    if (resp.ok) document.getElementById(`camp-${id}`)?.remove();
+  });
+});
+</script>
+{% endblock %}

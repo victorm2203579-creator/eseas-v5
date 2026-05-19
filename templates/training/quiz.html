@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% block title %}Quiz: {{ module.title }} | ESEAS{% endblock %}
+
+{% block extra_head %}
+<style>
+.option-card {
+  cursor: pointer;
+  border: 2px solid #dee2e6 !important;
+  transition: border-color .15s, background .15s;
+  user-select: none;
+}
+.option-card:hover { border-color: var(--orange) !important; background: rgba(255,107,53,.04); }
+.option-card.selected { border-color: var(--orange) !important; background: rgba(255,107,53,.09); }
+.option-card input[type=radio] { display:none; }
+.option-letter {
+  width: 2rem; height: 2rem; flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid #dee2e6;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size:.85rem;
+  transition: border-color .15s, background .15s, color .15s;
+}
+.option-card.selected .option-letter {
+  background: var(--orange); border-color: var(--orange); color:#fff;
+}
+.q-card { border-left: 4px solid #e9ecef; transition: border-color .2s; }
+.q-card.answered { border-left-color: var(--orange); }
+#timer-badge { font-size:.8rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-4">
+  <div class="container" style="max-width:720px;">
+
+    <!-- Breadcrumb -->
+    <div class="d-flex align-items-center mb-3 flex-wrap gap-1">
+      <a href="{{ url_for('training.index') }}" class="text-decoration-none text-muted small">
+        <i class="fa-solid fa-graduation-cap me-1"></i>Training
+      </a>
+      <span class="text-muted small mx-1">›</span>
+      <a href="{{ url_for('training.lesson', mid=module.id) }}" class="text-decoration-none text-muted small">Lesson</a>
+      <span class="text-muted small mx-1">›</span>
+      <span class="small fw-semibold" style="color:var(--orange)">Quiz</span>
+      <span class="text-muted small mx-1">›</span>
+      <span class="text-muted small">Result</span>
+    </div>
+
+    <!-- Header card -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header py-3" style="background:var(--navy);">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="text-white mb-0 fw-semibold">
+            <i class="fa-solid fa-clipboard-question me-2" style="color:var(--orange)"></i>
+            {{ module.title }}
+          </h5>
+          <div class="d-flex gap-2 align-items-center">
+            <span class="badge bg-light text-dark" id="answered-badge">0 / {{ questions|length }} answered</span>
+            <span class="badge bg-secondary" id="timer-badge">
+              <i class="fa-regular fa-clock me-1"></i><span id="timer-display">0:00</span>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="card-body px-4 py-2">
+        <div class="progress" style="height:6px;">
+          <div id="quiz-progress" class="progress-bar" role="progressbar"
+               style="width:0%; background:var(--orange); transition:width .3s;"></div>
+        </div>
+        <p class="small text-muted mt-2 mb-0">Answer all {{ questions|length }} questions, then click Submit. Pass mark: <strong>70/100</strong>.</p>
+      </div>
+    </div>
+
+    <!-- Question cards -->
+    <form id="quiz-form">
+      {% for q in questions %}
+      <div class="card border-0 shadow-sm mb-4 q-card" id="qcard-{{ q.id }}" data-qid="{{ q.id }}">
+        <div class="card-body p-4">
+          <p class="fw-semibold mb-3" style="color:var(--navy); font-size:1rem;">
+            <span class="badge me-2" style="background:var(--navy);color:#fff;font-size:.75rem;">Q{{ loop.index }}</span>
+            {{ q.question_text }}
+          </p>
+          <div class="d-flex flex-column gap-2">
+            {% for letter, text in [('a', q.option_a), ('b', q.option_b), ('c', q.option_c), ('d', q.option_d)] %}
+            <label class="option-card rounded p-3 d-flex align-items-center gap-3 mb-0"
+                   data-qid="{{ q.id }}" data-letter="{{ letter }}">
+              <input type="radio" name="q_{{ q.id }}" value="{{ letter }}">
+              <span class="option-letter">{{ letter|upper }}</span>
+              <span class="small flex-grow-1">{{ text }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+
+      <!-- Submit -->
+      <div class="d-flex justify-content-between align-items-center mb-5">
+        <a href="{{ url_for('training.lesson', mid=module.id) }}" class="btn btn-outline-secondary btn-sm">
+          <i class="fa-solid fa-arrow-left me-1"></i>Back to Lesson
+        </a>
+        <button type="submit" class="btn btn-orange" id="submit-btn" disabled>
+          <i class="fa-solid fa-paper-plane me-1"></i>Submit All Answers
+        </button>
+      </div>
+    </form>
+
+    <!-- Submitting overlay -->
+    <div id="submitting-msg" class="text-center py-4 d-none">
+      <div class="spinner-border text-warning mb-2" role="status"></div>
+      <p class="text-muted">Calculating your score…</p>
+    </div>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+  const TOTAL   = {{ questions|length }};
+  const answers = {};   // {qid: letter}
+
+  // ── Timer ──
+  let seconds = 0;
+  const timerEl = document.getElementById('timer-display');
+  setInterval(() => {
+    seconds++;
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    timerEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+  }, 1000);
+
+  // ── Option selection ──
+  document.querySelectorAll('.option-card').forEach(label => {
+    label.addEventListener('click', () => {
+      const qid    = label.dataset.qid;
+      const letter = label.dataset.letter;
+      answers[qid] = letter;
+
+      // Deselect siblings, select this
+      document.querySelectorAll(`.option-card[data-qid="${qid}"]`).forEach(l => l.classList.remove('selected'));
+      label.classList.add('selected');
+      label.querySelector('input[type=radio]').checked = true;
+
+      // Mark question card as answered
+      document.getElementById(`qcard-${qid}`).classList.add('answered');
+
+      // Update progress
+      const answeredCount = Object.keys(answers).length;
+      document.getElementById('answered-badge').textContent = `${answeredCount} / ${TOTAL} answered`;
+      document.getElementById('quiz-progress').style.width = `${Math.round(answeredCount / TOTAL * 100)}%`;
+      document.getElementById('submit-btn').disabled = answeredCount < TOTAL;
+    });
+  });
+
+  // ── Submit ──
+  document.getElementById('quiz-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    document.getElementById('submit-btn').disabled = true;
+    document.getElementById('submitting-msg').classList.remove('d-none');
+
+    try {
+      const resp = await fetch('{{ url_for("training.submit_quiz", mid=module.id) }}', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json',
+                   'X-CSRFToken':  document.querySelector('meta[name="csrf-token"]')?.content || '' },
+        body:    JSON.stringify({ answers }),
+      });
+      const data = await resp.json();
+      if (data.result_url) {
+        window.location.href = data.result_url;
+      } else {
+        alert(data.error || 'Submission failed.');
+        document.getElementById('submit-btn').disabled = false;
+        document.getElementById('submitting-msg').classList.add('d-none');
+      }
+    } catch (err) {
+      alert('Network error. Please try again.');
+      document.getElementById('submit-btn').disabled = false;
+      document.getElementById('submitting-msg').classList.add('d-none');
+    }
+  });
+})();
+</script>
+{% endblock %}

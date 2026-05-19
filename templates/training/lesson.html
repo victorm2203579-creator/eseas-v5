@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}{{ module.title }} | ESEAS{% endblock %}
+
+{% block extra_head %}
+<style>
+.breadcrumb-step { color: #6c757d; font-size:.85rem; }
+.breadcrumb-step.active { color: var(--orange); font-weight:600; }
+.breadcrumb-step + .breadcrumb-step::before {
+  content: '›'; margin: 0 .5rem; color:#dee2e6;
+}
+.lesson-content h2,.lesson-content h3,.lesson-content h4 {
+  color: var(--navy); margin-top:1.5rem;
+}
+.lesson-content .card { border:none; box-shadow:0 2px 8px rgba(0,0,0,.07); }
+.lesson-content table { width:100%; }
+.bottom-bar {
+  position: fixed; bottom:0; left:0; right:0;
+  background:#fff; border-top:1px solid #e9ecef;
+  padding:.85rem 1.5rem; z-index:1030;
+  display:flex; align-items:center; justify-content:space-between;
+  box-shadow: 0 -2px 12px rgba(0,0,0,.07);
+}
+body { padding-bottom: 80px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-4">
+  <div class="container">
+
+    <!-- Breadcrumb -->
+    <div class="d-flex align-items-center mb-3 flex-wrap gap-1">
+      <a href="{{ url_for('training.index') }}" class="text-decoration-none text-muted small">
+        <i class="fa-solid fa-graduation-cap me-1"></i>Training
+      </a>
+      <span class="text-muted small mx-1">›</span>
+      <span class="breadcrumb-step active">
+        <i class="fa-solid fa-book-open me-1"></i>Lesson
+      </span>
+      <span class="breadcrumb-step">Quiz</span>
+      <span class="breadcrumb-step">Result</span>
+    </div>
+
+    <!-- Module header -->
+    <div class="d-flex flex-wrap align-items-start gap-3 mb-4">
+      <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+           style="width:56px;height:56px;background:rgba(10,22,40,.08);">
+        <i class="fa-solid {{ module.icon_class }} fa-lg" style="color:var(--navy)"></i>
+      </div>
+      <div class="flex-grow-1">
+        <h3 class="fw-bold mb-1" style="color:var(--navy)">{{ module.title }}</h3>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <span class="badge bg-{{ module.topic_color }}" style="font-size:.75rem;">
+            {{ module.topic_label }}
+          </span>
+          <span class="text-muted small">
+            <i class="fa-regular fa-clock me-1"></i>{{ module.estimated_minutes }} min read
+          </span>
+          {% if assignment %}
+          <span class="badge" style="background:var(--orange);font-size:.7rem;">
+            <i class="fa-solid fa-exclamation me-1"></i>Mandatory
+          </span>
+          {% endif %}
+          {% if progress and progress.status == 'passed' %}
+          <span class="badge bg-success">
+            <i class="fa-solid fa-check me-1"></i>Passed — {{ progress.quiz_score }}/100
+          </span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Lesson content -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body p-4 lesson-content">
+        {{ module.content_html | safe }}
+      </div>
+    </div>
+
+    <!-- YouTube embed -->
+    {% if module.video_url %}
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body p-4">
+        <h6 class="fw-bold mb-3" style="color:var(--navy)">
+          <i class="fa-brands fa-youtube me-2 text-danger"></i>Video Resource
+        </h6>
+        <div class="ratio ratio-16x9">
+          <iframe src="{{ module.video_url }}"
+                  title="{{ module.title }} video"
+                  allowfullscreen
+                  style="border:0;border-radius:.5rem;"></iframe>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Tip card -->
+    <div class="alert alert-info d-flex gap-3 align-items-start mb-5">
+      <i class="fa-solid fa-lightbulb fa-lg flex-shrink-0 mt-1" style="color:var(--orange)"></i>
+      <div>
+        <strong>Ready for the quiz?</strong>
+        Scroll through all the content above, then click <em>Take the Quiz</em> when you feel confident.
+        You need a score of <strong>70/100</strong> to pass.
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Fixed bottom action bar -->
+<div class="bottom-bar">
+  <div class="small text-muted">
+    <i class="fa-solid fa-{{ module.icon_class.lstrip('fa-') if module.icon_class.startswith('fa-') else module.icon_class }} me-1" style="color:var(--navy)"></i>
+    {{ module.title }}
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('training.index') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="fa-solid fa-arrow-left me-1"></i>Back
+    </a>
+    <a href="{{ url_for('training.quiz', mid=module.id) }}" class="btn btn-orange btn-sm">
+      <i class="fa-solid fa-pencil me-1"></i>Take the Quiz
+      <i class="fa-solid fa-arrow-right ms-1"></i>
+    </a>
+  </div>
+</div>
+{% endblock %}

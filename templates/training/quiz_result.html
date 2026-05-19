@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% block title %}Quiz Result: {{ module.title }} | ESEAS{% endblock %}
+
+{% block extra_head %}
+<style>
+.score-ring { position:relative; display:inline-block; }
+.q-correct { border-left: 4px solid #198754 !important; }
+.q-wrong   { border-left: 4px solid #dc3545 !important; }
+.answer-row { font-size:.875rem; }
+/* Confetti keyframes */
+@keyframes confetti-fall {
+  0%   { transform: translateY(-20px) rotate(0deg); opacity:1; }
+  100% { transform: translateY(100vh)  rotate(720deg); opacity:0; }
+}
+.confetti-piece {
+  position: fixed; top: 0; width: 10px; height: 10px;
+  animation: confetti-fall linear forwards;
+  border-radius: 2px; pointer-events: none; z-index:9999;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container" style="max-width:740px;">
+
+    <!-- Breadcrumb -->
+    <div class="d-flex align-items-center mb-3 flex-wrap gap-1">
+      <a href="{{ url_for('training.index') }}" class="text-decoration-none text-muted small">
+        <i class="fa-solid fa-graduation-cap me-1"></i>Training
+      </a>
+      <span class="text-muted small mx-1">›</span>
+      <a href="{{ url_for('training.lesson', mid=module.id) }}" class="text-decoration-none text-muted small">Lesson</a>
+      <span class="text-muted small mx-1">›</span>
+      <a href="{{ url_for('training.quiz', mid=module.id) }}" class="text-decoration-none text-muted small">Quiz</a>
+      <span class="text-muted small mx-1">›</span>
+      <span class="small fw-semibold" style="color:var(--orange)">Result</span>
+    </div>
+
+    <!-- Score banner -->
+    <div class="card border-0 shadow mb-4 text-center"
+         style="border-top: 5px solid {{ 'var(--orange)' if progress.quiz_passed else '#dc3545' }} !important;">
+      <div class="card-body py-5">
+
+        <!-- Big score circle -->
+        <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+             style="width:110px;height:110px;
+                    background:{{ 'rgba(255,107,53,.12)' if progress.quiz_passed else 'rgba(220,53,69,.1)' }};
+                    border: 4px solid {{ 'var(--orange)' if progress.quiz_passed else '#dc3545' }};">
+          <span style="font-size:2.2rem;font-weight:800;
+                       color:{{ 'var(--orange)' if progress.quiz_passed else '#dc3545' }};">
+            {{ progress.quiz_score }}
+          </span>
+        </div>
+        <p class="text-muted small mb-2">/100</p>
+
+        {% if progress.quiz_passed %}
+        <h3 class="fw-bold mb-1" style="color:#198754;">
+          <i class="fa-solid fa-circle-check me-2"></i>You Passed!
+        </h3>
+        <p class="text-muted mb-3">Congratulations — you've successfully completed this module.</p>
+        {% else %}
+        <h3 class="fw-bold mb-1 text-danger">
+          <i class="fa-solid fa-circle-xmark me-2"></i>Not Passed
+        </h3>
+        <p class="text-muted mb-3">You need <strong>70/100</strong> to pass. Review the explanations below and try again.</p>
+        {% endif %}
+
+        <!-- Meta pills -->
+        <div class="d-flex flex-wrap justify-content-center gap-2 mb-4">
+          <span class="badge bg-light text-dark border">
+            <i class="fa-solid fa-list-check me-1"></i>{{ result_data|length }} questions
+          </span>
+          <span class="badge bg-light text-dark border">
+            <i class="fa-solid fa-check me-1 text-success"></i>
+            {{ result_data | selectattr('is_correct') | list | length }} correct
+          </span>
+          <span class="badge bg-light text-dark border">
+            <i class="fa-solid fa-xmark me-1 text-danger"></i>
+            {{ result_data | rejectattr('is_correct') | list | length }} incorrect
+          </span>
+          {% if progress.attempts %}
+          <span class="badge bg-light text-dark border">
+            <i class="fa-solid fa-rotate-right me-1"></i>Attempt {{ progress.attempts }}
+          </span>
+          {% endif %}
+        </div>
+
+        <!-- Action buttons -->
+        <div class="d-flex flex-wrap gap-2 justify-content-center">
+          {% if progress.quiz_passed %}
+            {% if next_module %}
+            <a href="{{ url_for('training.lesson', mid=next_module.id) }}" class="btn btn-orange">
+              <i class="fa-solid fa-arrow-right me-1"></i>Next Module
+            </a>
+            {% else %}
+            <a href="{{ url_for('training.certificate') }}" class="btn btn-success">
+              <i class="fa-solid fa-certificate me-1"></i>View Certificate
+            </a>
+            {% endif %}
+            <a href="{{ url_for('training.index') }}" class="btn btn-outline-secondary">
+              <i class="fa-solid fa-list me-1"></i>All Modules
+            </a>
+          {% else %}
+            <a href="{{ url_for('training.quiz', mid=module.id) }}" class="btn btn-orange">
+              <i class="fa-solid fa-rotate-right me-1"></i>Retake Quiz
+            </a>
+            <a href="{{ url_for('training.lesson', mid=module.id) }}" class="btn btn-outline-secondary">
+              <i class="fa-solid fa-book-open me-1"></i>Review Lesson
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Per-question breakdown -->
+    <h5 class="fw-bold mb-3" style="color:var(--navy);">
+      <i class="fa-solid fa-magnifying-glass-chart me-2" style="color:var(--orange)"></i>Question Breakdown
+    </h5>
+
+    {% for item in result_data %}
+    <div class="card border-0 shadow-sm mb-3 {{ 'q-correct' if item.is_correct else 'q-wrong' }}">
+      <div class="card-body p-4">
+        <!-- Question -->
+        <div class="d-flex gap-3 align-items-start mb-3">
+          <span class="badge rounded-pill flex-shrink-0 mt-1
+                       {{ 'bg-success' if item.is_correct else 'bg-danger' }}">
+            Q{{ loop.index }}
+          </span>
+          <p class="fw-semibold mb-0 flex-grow-1" style="color:var(--navy);">{{ item.question }}</p>
+          <i class="fa-solid {{ 'fa-circle-check text-success' if item.is_correct else 'fa-circle-xmark text-danger' }} fa-lg flex-shrink-0"></i>
+        </div>
+
+        <!-- Answer rows -->
+        <div class="row g-2 answer-row mb-3">
+          <div class="col-sm-6">
+            <div class="rounded p-2 {{ 'bg-success bg-opacity-10' if item.is_correct else 'bg-danger bg-opacity-10' }}">
+              <div class="small text-muted fw-semibold mb-1">Your Answer</div>
+              <div class="{{ 'text-success' if item.is_correct else 'text-danger' }} fw-semibold">
+                <span class="badge me-1 {{ 'bg-success' if item.is_correct else 'bg-danger' }}">
+                  {{ item.your_answer | upper if item.your_answer else '—' }}
+                </span>
+                {{ item.your_answer_text }}
+              </div>
+            </div>
+          </div>
+          {% if not item.is_correct %}
+          <div class="col-sm-6">
+            <div class="rounded p-2 bg-success bg-opacity-10">
+              <div class="small text-muted fw-semibold mb-1">Correct Answer</div>
+              <div class="text-success fw-semibold">
+                <span class="badge bg-success me-1">{{ item.correct_answer | upper }}</span>
+                {{ item.correct_answer_text }}
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Explanation -->
+        {% if item.explanation %}
+        <div class="alert alert-light border mb-0 d-flex gap-2 align-items-start py-2">
+          <i class="fa-solid fa-lightbulb flex-shrink-0 mt-1" style="color:var(--orange)"></i>
+          <span class="small">{{ item.explanation }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+
+    <!-- Bottom nav -->
+    <div class="d-flex justify-content-between mt-4 mb-3">
+      <a href="{{ url_for('training.index') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="fa-solid fa-arrow-left me-1"></i>Back to Training
+      </a>
+      {% if not progress.quiz_passed %}
+      <a href="{{ url_for('training.quiz', mid=module.id) }}" class="btn btn-orange btn-sm">
+        <i class="fa-solid fa-rotate-right me-1"></i>Retake Quiz
+      </a>
+      {% elif next_module %}
+      <a href="{{ url_for('training.lesson', mid=next_module.id) }}" class="btn btn-orange btn-sm">
+        Next Module <i class="fa-solid fa-arrow-right ms-1"></i>
+      </a>
+      {% endif %}
+    </div>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if progress.quiz_passed %}
+<script>
+// Confetti burst on pass
+(function() {
+  const colors = ['#ff6b35','#0a1628','#ffc107','#198754','#0d6efd','#d63384'];
+  for (let i = 0; i < 80; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.left             = Math.random() * 100 + 'vw';
+    el.style.background       = colors[Math.floor(Math.random() * colors.length)];
+    el.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+    el.style.animationDelay   = (Math.random() * 0.8) + 's';
+    el.style.width            = (6 + Math.random() * 8) + 'px';
+    el.style.height           = el.style.width;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+})();
+</script>
+{% endif %}
+{% endblock %}

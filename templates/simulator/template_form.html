@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Edit' if mode == 'edit' else 'New' }} Template | ESEAS{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container" style="max-width:820px;">
+
+    <div class="mb-4">
+      <a href="{{ url_for('simulator.templates') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="fa-solid fa-arrow-left me-1"></i>Back to Templates
+      </a>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+      <div class="card-header py-3" style="background:var(--navy);">
+        <h5 class="text-white mb-0 fw-semibold">
+          <i class="fa-solid fa-{{ 'pen' if mode == 'edit' else 'plus' }} me-2" style="color:var(--orange)"></i>
+          {{ 'Edit Template' if mode == 'edit' else 'New Attack Template' }}
+        </h5>
+      </div>
+      <div class="card-body p-4">
+
+        <form method="POST">
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-7">
+              <label class="form-label fw-semibold">Template Name <span class="text-danger">*</span></label>
+              <input type="text" name="name" class="form-control" required maxlength="120"
+                     value="{{ tmpl.name if tmpl else '' }}"
+                     placeholder="e.g. IT Password Reset Alert" />
+            </div>
+            <div class="col-md-5">
+              <label class="form-label fw-semibold">Attack Type <span class="text-danger">*</span></label>
+              <select name="attack_type" class="form-select" required>
+                <option value="" disabled {{ 'selected' if not tmpl else '' }}>— Select —</option>
+                {% for at in attack_types %}
+                <option value="{{ at.id }}"
+                  {{ 'selected' if tmpl and tmpl.attack_type == at.id else '' }}>
+                  {{ at.label }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Email Subject <span class="text-danger">*</span></label>
+            <input type="text" name="subject" class="form-control" required maxlength="200"
+                   value="{{ tmpl.subject if tmpl else '' }}"
+                   placeholder="e.g. [Action Required] Verify Your Account" />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Preview Text</label>
+            <input type="text" name="preview_text" class="form-control" maxlength="200"
+                   value="{{ tmpl.preview_text if tmpl else '' }}"
+                   placeholder="Short text shown in email inbox preview (optional)" />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Email Body (HTML) <span class="text-danger">*</span></label>
+            <div class="alert alert-light border small py-2 mb-2">
+              <strong>Available placeholders:</strong>
+              <code class="ms-1">&#123;&#123;user_name&#125;&#125;</code>
+              <code class="ms-1">&#123;&#123;user_email&#125;&#125;</code>
+              <code class="ms-1">&#123;&#123;tracking_link&#125;&#125;</code>
+              <code class="ms-1">&#123;&#123;report_link&#125;&#125;</code>
+              <code class="ms-1">&#123;&#123;company_name&#125;&#125;</code>
+              <code class="ms-1">&#123;&#123;date&#125;&#125;</code>
+            </div>
+            <textarea name="body_html" class="form-control font-monospace" rows="14" required
+                      placeholder="Paste or write the HTML email body here. Use the placeholders above to personalise.">{{ tmpl.body_html if tmpl else '' }}</textarea>
+            <div class="form-text">Use full HTML. The <code>&#123;&#123;tracking_link&#125;&#125;</code> placeholder will be replaced with the click-tracking URL automatically.</div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Fake Landing Page</label>
+              <select name="fake_page_type" class="form-select">
+                <option value="it_login"   {{ 'selected' if tmpl and tmpl.fake_page_type == 'it_login'   else '' }}>Corporate IT Portal</option>
+                <option value="bank_login" {{ 'selected' if tmpl and tmpl.fake_page_type == 'bank_login' else '' }}>Bank Login Page</option>
+                <option value="prize_claim"{{ 'selected' if tmpl and tmpl.fake_page_type == 'prize_claim'else '' }}>Prize Claim Page</option>
+              </select>
+              <div class="form-text">The page shown when a target clicks the tracking link.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Difficulty Level</label>
+              <select name="difficulty_level" class="form-select">
+                {% for lvl in [1, 2, 3, 4, 5] %}
+                <option value="{{ lvl }}"
+                  {{ 'selected' if tmpl and tmpl.difficulty_level == lvl else ('selected' if not tmpl and lvl == 3 else '') }}>
+                  {{ lvl }} — {{ ['Very Easy', 'Easy', 'Medium', 'Hard', 'Very Hard'][lvl - 1] }}
+                </option>
+                {% endfor %}
+              </select>
+              <div class="form-text">How convincing / deceptive this scenario is.</div>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Internal Description</label>
+            <textarea name="description" class="form-control" rows="2"
+                      placeholder="Notes for administrators — not shown to targets">{{ tmpl.description if tmpl else '' }}</textarea>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-orange">
+              <i class="fa-solid fa-floppy-disk me-1"></i>
+              {{ 'Save Changes' if mode == 'edit' else 'Create Template' }}
+            </button>
+            <a href="{{ url_for('simulator.templates') }}" class="btn btn-outline-secondary">Cancel</a>
+            {% if mode == 'edit' and tmpl %}
+            <a href="{{ url_for('simulator.preview_template', tid=tmpl.id) }}"
+               class="btn btn-outline-info ms-auto" target="_blank">
+              <i class="fa-solid fa-eye me-1"></i>Preview
+            </a>
+            {% endif %}
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

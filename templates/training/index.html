@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block title %}Awareness Training | ESEAS{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+      <div>
+        <h2 class="fw-bold mb-0" style="color:var(--navy)">
+          <i class="fa-solid fa-graduation-cap me-2" style="color:var(--orange)"></i>Awareness Training
+        </h2>
+        <p class="text-muted small mb-0">
+          Complete modules to improve your security awareness score.
+        </p>
+      </div>
+      <div class="text-end">
+        <div class="fw-bold fs-5" style="color:var(--navy)">
+          {{ completed_count }} / {{ total_modules }} completed
+        </div>
+        {% if completed_count > 0 %}
+        <div class="text-muted small">Average score: {{ avg_score }}%</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    {% if total_modules > 0 %}
+    <div class="mb-4">
+      <div class="progress" style="height:10px; border-radius:8px;">
+        <div class="progress-bar" role="progressbar"
+             style="width:{{ (completed_count / total_modules * 100)|int }}%; background:var(--orange);">
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Module cards -->
+    <div class="row g-4">
+      {% for mod in modules %}
+      <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100 feature-card">
+          <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <div class="rounded-circle d-flex align-items-center justify-content-center"
+                   style="width:52px;height:52px;background:rgba(249,115,22,.18);border:1.5px solid rgba(249,115,22,.35);">
+                <i class="fa-solid {{ mod.icon or 'fa-book' }}" style="color:var(--orange);font-size:1.25rem;"></i>
+              </div>
+              <div class="d-flex gap-1 flex-wrap justify-content-end">
+                <span class="badge bg-{{ mod.level_color }}-subtle text-{{ mod.level_color }} border border-{{ mod.level_color }}">
+                  {{ mod.level }}
+                </span>
+                {% if mod.completed %}
+                <span class="badge bg-success">
+                  <i class="fa-solid fa-circle-check me-1"></i>Done
+                </span>
+                {% endif %}
+              </div>
+            </div>
+            <h6 class="fw-bold mb-1" style="color:var(--navy)">{{ mod.title }}</h6>
+            <p class="text-muted small mb-3">{{ mod.description }}</p>
+            <div class="d-flex align-items-center justify-content-between">
+              <span class="text-muted small">
+                <i class="fa-regular fa-clock me-1"></i>{{ mod.duration }}
+              </span>
+              {% if mod.completed %}
+              <div class="d-flex gap-2 align-items-center">
+                <span class="small text-success fw-semibold">{{ mod.score }}%</span>
+                <a href="{{ url_for('training.module_detail', module_id=mod.id) }}"
+                   class="btn btn-sm btn-outline-success">
+                  Review
+                </a>
+              </div>
+              {% else %}
+              <a href="{{ url_for('training.module_detail', module_id=mod.id) }}"
+                 class="btn btn-sm btn-orange">
+                Start
+              </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
+</section>
+{% endblock %}

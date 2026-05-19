@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% block title %}Certificate of Completion | ESEAS{% endblock %}
+{% block page_title %}Certificate{% endblock %}
+
+{% block extra_head %}
+<style>
+@media print {
+  .no-print { display:none !important; }
+  body       { background:#fff !important; }
+  .cert-wrap { box-shadow:none !important; margin:0 !important; max-width:100% !important; }
+}
+.cert-wrap {
+  max-width: 860px;
+  margin: 0 auto;
+  background: #fff;
+  border: 12px solid #0a1628;
+  border-radius: 4px;
+  position: relative;
+  box-shadow: 0 8px 40px rgba(0,0,0,.18);
+}
+.cert-inner {
+  border: 2px solid #d4a017;
+  margin: 10px;
+  padding: 2.5rem 3rem;
+}
+.cert-header-bar {
+  background: #0a1628;
+  margin: -2.5rem -3rem 2rem;
+  padding: 1.2rem 3rem;
+  display: flex; align-items: center; justify-content: center; gap: .75rem;
+}
+.cert-divider {
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #ff6b35, transparent);
+  margin: 1rem auto;
+  width: 60%;
+}
+.cert-module-row {
+  display: flex; align-items: center; gap: .75rem;
+  padding: .4rem 0;
+  border-bottom: 1px dashed #e9ecef;
+  font-size: .875rem;
+}
+.cert-module-row:last-child { border-bottom: none; }
+.sig-line {
+  border-top: 1px solid #0a1628;
+  width: 160px;
+  display: inline-block;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+
+    <!-- Action bar -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2 no-print">
+      <div>
+        <h4 class="fw-bold mb-0" style="color:var(--navy)">
+          <i class="fa-solid fa-certificate me-2" style="color:var(--orange)"></i>Certificate of Completion
+        </h4>
+        <p class="text-muted small mb-0">Your cybersecurity awareness achievement.</p>
+      </div>
+      <div class="d-flex gap-2">
+        {% if all_passed %}
+        <a href="{{ url_for('training.download_certificate') }}" class="btn btn-orange btn-sm">
+          <i class="fa-solid fa-file-pdf me-1"></i>Download PDF
+        </a>
+        {% endif %}
+        <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
+          <i class="fa-solid fa-print me-1"></i>Print
+        </button>
+        <a href="{{ url_for('training.index') }}" class="btn btn-outline-secondary btn-sm">
+          <i class="fa-solid fa-arrow-left me-1"></i>Back
+        </a>
+      </div>
+    </div>
+
+    {% if not all_passed %}
+    <div class="alert alert-warning d-flex gap-3 align-items-start mb-4 no-print">
+      <i class="fa-solid fa-triangle-exclamation fa-lg flex-shrink-0 mt-1"></i>
+      <div>
+        <strong>Certificate not yet available.</strong>
+        You have passed {{ passed_pairs|length }} of {{ total_modules }} modules.
+        Complete all modules to unlock the official certificate and PDF download.
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Certificate body -->
+    <div class="cert-wrap">
+      <div class="cert-inner">
+
+        <!-- Header bar -->
+        <div class="cert-header-bar">
+          <i class="fa-solid fa-shield-halved fa-lg" style="color:var(--orange)"></i>
+          <span class="fw-bold text-white" style="font-size:1.3rem;letter-spacing:.04em;">ESEAS</span>
+          <span class="text-white-50 small">Enhanced Social Engineering Attack Simulator</span>
+        </div>
+
+        <!-- Title -->
+        <div class="text-center mb-2">
+          <p class="text-muted small text-uppercase fw-semibold mb-1" style="letter-spacing:.12em;">
+            Cybersecurity Awareness Programme
+          </p>
+          <h1 class="fw-bold" style="color:var(--navy);font-size:2rem;letter-spacing:.02em;">
+            CERTIFICATE OF COMPLETION
+          </h1>
+        </div>
+
+        <div class="cert-divider"></div>
+
+        <!-- Body text -->
+        <div class="text-center my-4">
+          <p class="text-muted mb-1">This certifies that</p>
+          <h2 class="fw-bold mb-1" style="color:var(--navy);font-size:1.9rem;">
+            {{ current_user.name }}
+          </h2>
+          <p class="text-muted">has successfully completed the</p>
+          <p class="fw-semibold" style="color:var(--navy);font-size:1.05rem;">
+            Cybersecurity Awareness Training Programme
+          </p>
+          {% if passed_pairs %}
+          {% set last_date = passed_pairs | map(attribute='1') | map(attribute='completed_at') | select | max %}
+          <p class="text-muted small">
+            Completion date:
+            <strong>{{ last_date.strftime('%d %B %Y') if last_date else '—' }}</strong>
+          </p>
+          {% endif %}
+        </div>
+
+        <div class="cert-divider"></div>
+
+        <!-- Modules list -->
+        {% if passed_pairs %}
+        <h6 class="fw-bold text-center mb-3" style="color:var(--navy);">Modules Completed</h6>
+        <div class="mx-auto" style="max-width:520px;">
+          {% for m, p in passed_pairs %}
+          <div class="cert-module-row">
+            <i class="fa-solid fa-circle-check text-success flex-shrink-0"></i>
+            <span class="flex-grow-1 fw-semibold" style="color:var(--navy);">{{ m.title }}</span>
+            <span class="badge bg-success">{{ p.quiz_score }}/100</span>
+            <span class="text-muted" style="font-size:.75rem;">
+              {{ p.completed_at.strftime('%d %b %Y') if p.completed_at else '' }}
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Signatures -->
+        <div class="d-flex justify-content-around text-center mt-5">
+          <div>
+            <div class="sig-line mb-1"></div>
+            <div class="small text-muted">Participant Signature</div>
+          </div>
+          <div>
+            <div class="sig-line mb-1"></div>
+            <div class="small text-muted">Supervisor / Administrator</div>
+          </div>
+        </div>
+
+        <!-- Footer note -->
+        <div class="text-center mt-4">
+          <p class="text-muted" style="font-size:.7rem;">
+            Issued {{ 'today' }}  &bull;  Federal University of Technology, Minna
+            &bull;  Cybersecurity Final Year Project &bull;  ESEAS v5
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

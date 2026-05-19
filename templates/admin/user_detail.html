@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}{{ target_user.name }} | Admin | ESEAS{% endblock %}
+{% block page_title %}User Detail{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+    <a href="{{ url_for('admin_bp.users') }}" class="btn btn-sm btn-outline-secondary mb-4">
+      <i class="fa-solid fa-arrow-left me-1"></i>Back to Users
+    </a>
+
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="card border-0 shadow-sm text-center p-4">
+          <div class="avatar-circle-lg mx-auto mb-3">{{ target_user.avatar_initials }}</div>
+          <h5 class="fw-bold mb-1" style="color:var(--navy)">{{ target_user.name }}</h5>
+          <p class="text-muted small mb-2">{{ target_user.email }}</p>
+          {% if target_user.is_admin() %}
+            <span class="badge badge-admin px-3 py-2">Admin</span>
+          {% else %}
+            <span class="badge bg-secondary px-3 py-2">User</span>
+          {% endif %}
+          <hr />
+          <ul class="list-unstyled text-start small text-muted">
+            <li class="mb-1"><i class="fa-solid fa-calendar me-2"></i>Joined {{ target_user.created_at.strftime('%d %b %Y') }}</li>
+            <li class="mb-1"><i class="fa-solid fa-clock me-2"></i>Last login:
+              {% if target_user.last_login %}{{ target_user.last_login.strftime('%d %b %Y %H:%M') }}{% else %}Never{% endif %}
+            </li>
+            <li><i class="fa-solid fa-circle me-2 {{ 'text-success' if target_user.is_active else 'text-danger' }}"></i>
+              {{ 'Active' if target_user.is_active else 'Inactive' }}
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header py-3" style="background:var(--navy)">
+            <h6 class="text-white mb-0 fw-semibold">
+              <i class="fa-solid fa-clock-rotate-left me-2" style="color:var(--orange)"></i>Login Sessions
+            </h6>
+          </div>
+          <div class="card-body p-0">
+            {% if recent_sessions %}
+              <table class="table table-sm table-hover mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th class="ps-3">Date / Time</th>
+                    <th>IP</th>
+                    <th>Agent</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for s in recent_sessions %}
+                  <tr>
+                    <td class="ps-3 small">{{ s.logged_in_at.strftime('%d %b %Y %H:%M') }}</td>
+                    <td class="small font-monospace">{{ s.ip_address or '—' }}</td>
+                    <td class="small text-truncate" style="max-width:200px;">{{ s.user_agent or '—' }}</td>
+                    <td>
+                      {% if s.logged_out_at %}
+                        <span class="badge bg-secondary">Ended</span>
+                      {% else %}
+                        <span class="badge bg-success">Active</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              <p class="text-muted p-4 mb-0">No sessions recorded.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

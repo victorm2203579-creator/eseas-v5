@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+{% block title %}Reports & Data Export | ESEAS{% endblock %}
+{% block page_title %}Reports{% endblock %}
+
+{% block extra_head %}
+<style>
+.export-card { transition: transform .2s, box-shadow .2s; cursor: default; }
+.export-card:hover { transform: translateY(-4px); box-shadow: 0 10px 28px rgba(10,22,40,.12) !important; }
+.stat-chip { border-radius: .6rem; padding: .5rem 1rem; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.pdf-feature-card { background: linear-gradient(135deg, var(--navy) 0%, #1a2f4f 100%); }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-5 gap-3">
+      <div>
+        <h2 class="fw-bold mb-1" style="color:var(--navy)">
+          <i class="fa-solid fa-file-lines me-2" style="color:var(--orange)"></i>Reports &amp; Data Export
+        </h2>
+        <p class="text-muted mb-0">Generate and download system-wide security reports. Admin access only.</p>
+      </div>
+      <span class="badge px-3 py-2 fs-6" style="background:var(--orange);">
+        <i class="fa-solid fa-shield-halved me-1"></i>Admin Only
+      </span>
+    </div>
+
+    <!-- Quick stats row -->
+    <div class="row g-3 mb-5">
+      <div class="col-6 col-md-3">
+        <div class="stat-chip text-center">
+          <div class="fw-bold fs-4" style="color:var(--orange)">{{ total_scans }}</div>
+          <div class="text-muted small">Total Scans</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-chip text-center">
+          <div class="fw-bold fs-4" style="color:#0d6efd">{{ total_users }}</div>
+          <div class="text-muted small">Registered Users</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-chip text-center">
+          <div class="fw-bold fs-4 text-danger">{{ detection_rate }}%</div>
+          <div class="text-muted small">Phishing Detection Rate</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-chip text-center">
+          <div class="fw-bold fs-4" style="color:#198754">{{ total_campaigns }}</div>
+          <div class="text-muted small">Total Campaigns</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CSV Exports -->
+    <h5 class="fw-bold mb-3" style="color:var(--navy)">
+      <i class="fa-solid fa-file-csv me-2" style="color:var(--orange)"></i>CSV Data Exports
+    </h5>
+    <div class="row g-4 mb-5">
+
+      <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100 export-card">
+          <div class="card-body p-4 text-center d-flex flex-column">
+            <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3"
+                 style="width:60px;height:60px;background:rgba(249,115,22,.15);border:1.5px solid rgba(249,115,22,.3);">
+              <i class="fa-solid fa-magnifying-glass fa-xl" style="color:var(--orange)"></i>
+            </div>
+            <h6 class="fw-bold mb-2" style="color:var(--navy)">URL Scanning Report</h6>
+            <p class="text-muted small mb-3 flex-grow-1">
+              All scanned URLs with risk scores, labels, ML scores, VirusTotal detections, and scan dates.
+            </p>
+            <div class="mb-2">
+              <span class="badge bg-light text-muted border" style="font-size:.68rem;">{{ total_scans }} records</span>
+            </div>
+            <a href="{{ url_for('reports.export_scans_csv') }}" class="btn btn-orange btn-sm w-100">
+              <i class="fa-solid fa-download me-1"></i>Export CSV
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100 export-card">
+          <div class="card-body p-4 text-center d-flex flex-column">
+            <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3"
+                 style="width:60px;height:60px;background:rgba(220,53,69,.15);border:1.5px solid rgba(220,53,69,.3);">
+              <i class="fa-solid fa-crosshairs fa-xl text-danger"></i>
+            </div>
+            <h6 class="fw-bold mb-2" style="color:var(--navy)">Simulation Report</h6>
+            <p class="text-muted small mb-3 flex-grow-1">
+              All phishing campaigns with click rates, credential entry rates, and report rates.
+            </p>
+            <div class="mb-2">
+              <span class="badge bg-light text-muted border" style="font-size:.68rem;">{{ total_campaigns }} campaigns</span>
+            </div>
+            <a href="{{ url_for('reports.export_campaigns_csv') }}" class="btn btn-orange btn-sm w-100">
+              <i class="fa-solid fa-download me-1"></i>Export CSV
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100 export-card">
+          <div class="card-body p-4 text-center d-flex flex-column">
+            <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3"
+                 style="width:60px;height:60px;background:rgba(13,110,253,.15);border:1.5px solid rgba(13,110,253,.3);">
+              <i class="fa-solid fa-users fa-xl text-primary"></i>
+            </div>
+            <h6 class="fw-bold mb-2" style="color:var(--navy)">User Report</h6>
+            <p class="text-muted small mb-3 flex-grow-1">
+              All registered users with risk scores, scan counts, role, and registration dates.
+            </p>
+            <div class="mb-2">
+              <span class="badge bg-light text-muted border" style="font-size:.68rem;">{{ total_users }} users</span>
+            </div>
+            <a href="{{ url_for('reports.export_users_csv') }}" class="btn btn-orange btn-sm w-100">
+              <i class="fa-solid fa-download me-1"></i>Export CSV
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100 export-card">
+          <div class="card-body p-4 text-center d-flex flex-column">
+            <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3"
+                 style="width:60px;height:60px;background:rgba(25,135,84,.15);border:1.5px solid rgba(25,135,84,.3);">
+              <i class="fa-solid fa-graduation-cap fa-xl text-success"></i>
+            </div>
+            <h6 class="fw-bold mb-2" style="color:var(--navy)">Training Report</h6>
+            <p class="text-muted small mb-3 flex-grow-1">
+              All training progress records with quiz scores, module names, and completion dates.
+            </p>
+            <div class="mb-2">
+              <span class="badge bg-light text-muted border" style="font-size:.68rem;">{{ active_modules }} modules</span>
+            </div>
+            <a href="{{ url_for('reports.export_training_csv') }}" class="btn btn-orange btn-sm w-100">
+              <i class="fa-solid fa-download me-1"></i>Export CSV
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Full PDF Report -->
+    <h5 class="fw-bold mb-3" style="color:var(--navy)">
+      <i class="fa-solid fa-file-pdf me-2 text-danger"></i>Full System Report
+    </h5>
+    <div class="card border-0 shadow-sm mb-5 pdf-feature-card">
+      <div class="card-body p-0">
+        <div class="row g-0 align-items-center">
+
+          <div class="col-lg-8 p-5">
+            <h4 class="fw-bold text-white mb-2">Full PDF Security Report</h4>
+            <p class="mb-4" style="color:rgba(255,255,255,.75);">
+              A comprehensive multi-page report covering all aspects of your organisation's
+              cybersecurity posture — from URL scanning analysis to simulation results,
+              training completion rates, and auto-generated recommendations.
+            </p>
+            <div class="row g-2">
+              {% for pg in [
+                ('1','Cover Page','Project name, generated date &amp; admin'),
+                ('2','Executive Summary','System-wide stats and narrative overview'),
+                ('3','URL Scanning Analysis','Risk distribution and top 10 flagged URLs'),
+                ('4','Simulation Results','Campaign performance and vulnerable users'),
+                ('5','Training &amp; Awareness','Module completion rates and badges'),
+                ('6','Recommendations','Auto-generated from live data thresholds'),
+              ] %}
+              <div class="col-md-6">
+                <div class="d-flex align-items-start gap-2 mb-1">
+                  <span class="badge rounded-pill flex-shrink-0 mt-1"
+                        style="background:rgba(255,107,53,.3);color:var(--orange);font-size:.65rem;">
+                    Pg {{ pg[0] }}
+                  </span>
+                  <div>
+                    <div class="small fw-semibold text-white">{{ pg[1] }}</div>
+                    <div style="font-size:.7rem;color:rgba(255,255,255,.5);">{{ pg[2] }}</div>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="col-lg-4 p-5 border-start d-flex flex-column align-items-center justify-content-center text-center"
+               style="border-color:rgba(255,255,255,.08)!important;">
+            <i class="fa-solid fa-file-pdf text-danger mb-3" style="font-size:3.5rem;opacity:.85;"></i>
+            <a href="{{ url_for('reports.export_full_pdf') }}"
+               id="pdfBtn" class="btn btn-orange btn-lg w-100 mb-3">
+              <i class="fa-solid fa-download me-2" id="pdfIcon"></i>
+              <span id="pdfLabel">Generate PDF Report</span>
+              <span class="spinner-border spinner-border-sm ms-2 d-none" id="pdfSpinner" role="status"></span>
+            </a>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom summary -->
+    <h5 class="fw-bold mb-3" style="color:var(--navy)">
+      <i class="fa-solid fa-chart-bar me-2" style="color:var(--orange)"></i>System Summary
+    </h5>
+    <div class="row g-3">
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3" style="border-top:3px solid var(--orange);">
+          <h4 class="fw-bold mb-0" style="color:var(--navy)">{{ active_modules }}</h4>
+          <p class="small text-muted mb-0">Active Training Modules</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3" style="border-top:3px solid #198754;">
+          <h4 class="fw-bold mb-0 text-success">{{ users_completed_all }}</h4>
+          <p class="small text-muted mb-0">Users Completed All Modules</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3" style="border-top:3px solid #6f42c1;">
+          <h4 class="fw-bold mb-0" style="color:#6f42c1">{{ total_campaigns }}</h4>
+          <p class="small text-muted mb-0">Total Campaigns Run</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3" style="border-top:3px solid #ffc107;">
+          <h4 class="fw-bold mb-0 text-warning">{{ total_badges_awarded }}</h4>
+          <p class="small text-muted mb-0">Badges Awarded</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('pdfBtn').addEventListener('click', function () {
+  document.getElementById('pdfIcon').classList.add('d-none');
+  document.getElementById('pdfSpinner').classList.remove('d-none');
+  document.getElementById('pdfLabel').textContent = 'Generating…';
+  this.classList.add('disabled');
+  setTimeout(() => {
+    document.getElementById('pdfIcon').classList.remove('d-none');
+    document.getElementById('pdfSpinner').classList.add('d-none');
+    document.getElementById('pdfLabel').textContent = 'Generate PDF Report';
+    this.classList.remove('disabled');
+  }, 15000);
+});
+</script>
+{% endblock %}

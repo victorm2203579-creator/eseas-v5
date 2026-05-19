@@ -1,0 +1,288 @@
+{% extends 'base.html' %}
+{% block title %}Security Training | ESEAS{% endblock %}
+{% block page_title %}My Training{% endblock %}
+
+{% block extra_head %}
+<style>
+.progress-ring__circle {
+  transition: stroke-dashoffset 0.8s ease;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+.module-card { transition: box-shadow .2s, transform .2s; cursor: pointer; }
+.module-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.12)!important; transform: translateY(-2px); }
+.badge-slot { transition: transform .2s; }
+.badge-slot:hover { transform: scale(1.05); }
+.badge-unearned { filter: grayscale(100%) opacity(.5); }
+.mandatory-glow { box-shadow: 0 0 0 3px rgba(255,107,53,.5); }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+      <div>
+        <h2 class="fw-bold mb-0" style="color:var(--navy)">
+          <i class="fa-solid fa-graduation-cap me-2" style="color:var(--orange)"></i>Security Training
+        </h2>
+        <p class="text-muted small mb-0">Complete all modules to earn your Cybersecurity Awareness Certificate.</p>
+      </div>
+      {% if passed_count == total_modules and total_modules > 0 %}
+      <a href="{{ url_for('training.certificate') }}" class="btn btn-success">
+        <i class="fa-solid fa-certificate me-2"></i>View Certificate
+      </a>
+      {% endif %}
+    </div>
+
+    <!-- Mandatory assignment alert -->
+    {% if pending_count > 0 %}
+    <div class="alert alert-warning d-flex align-items-center gap-3 mb-4">
+      <i class="fa-solid fa-triangle-exclamation fa-lg flex-shrink-0"></i>
+      <div>
+        <strong>{{ pending_count }} mandatory training assignment{{ 's' if pending_count != 1 else '' }} pending.</strong>
+        These were assigned based on your recent activity in a security simulation. Please complete them as soon as possible.
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Overall progress + stats -->
+    <div class="row g-4 mb-5 align-items-center">
+
+      <!-- Progress ring -->
+      <div class="col-md-3 text-center">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <circle cx="70" cy="70" r="58" fill="none" stroke="#e9ecef" stroke-width="12"/>
+          <circle class="progress-ring__circle" cx="70" cy="70" r="58"
+                  fill="none" stroke="var(--orange)" stroke-width="12"
+                  stroke-linecap="round"
+                  stroke-dasharray="{{ (58 * 2 * 3.14159)|round(2) }}"
+                  stroke-dashoffset="{{ ((58 * 2 * 3.14159) * (1 - progress_pct / 100))|round(2) }}" />
+          <text x="70" y="67" text-anchor="middle" font-size="28" font-weight="bold" fill="#0a1628">{{ progress_pct }}</text>
+          <text x="70" y="85" text-anchor="middle" font-size="12" fill="#6c757d">% done</text>
+        </svg>
+        <p class="mt-1 small text-muted fw-semibold">{{ passed_count }} / {{ total_modules }} modules passed</p>
+      </div>
+
+      <!-- Stat cards -->
+      <div class="col-md-9">
+        <div class="row g-3">
+          <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-center p-3" style="border-top:3px solid var(--orange);">
+              <h4 class="fw-bold mb-0" style="color:var(--navy)">{{ total_modules }}</h4>
+              <p class="small text-muted mb-0">Total Modules</p>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-center p-3" style="border-top:3px solid #198754;">
+              <h4 class="fw-bold mb-0 text-success">{{ passed_count }}</h4>
+              <p class="small text-muted mb-0">Passed</p>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-center p-3" style="border-top:3px solid #ffc107;">
+              <h4 class="fw-bold mb-0 text-warning">{{ pending_count }}</h4>
+              <p class="small text-muted mb-0">Mandatory</p>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-center p-3" style="border-top:3px solid #0d6efd;">
+              <h4 class="fw-bold mb-0 text-primary">{{ badges|length }}</h4>
+              <p class="small text-muted mb-0">Badges Earned</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Module cards -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+      <h5 class="fw-bold mb-0" style="color:var(--navy)">
+        <i class="fa-solid fa-book-open me-2" style="color:var(--orange)"></i>Training Modules
+        <span class="text-muted fw-normal fs-6 ms-2">Completed {{ passed_count }} of {{ total_modules }}</span>
+      </h5>
+      <!-- Topic filter bar -->
+      <div class="d-flex flex-wrap gap-2" id="topicFilters">
+        <button class="btn btn-sm btn-secondary active-filter" data-filter="all">All</button>
+        <button class="btn btn-sm btn-outline-danger" data-filter="phishing">Phishing</button>
+        <button class="btn btn-sm btn-outline-warning" data-filter="social_engineering">Social Engineering</button>
+        <button class="btn btn-sm btn-outline-info" data-filter="safe_browsing">Safe Browsing</button>
+        <button class="btn btn-sm btn-outline-primary" data-filter="passwords">Passwords</button>
+        <button class="btn btn-sm btn-outline-success" data-filter="incident_response">Incident Response</button>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-5" id="moduleGrid">
+      {% for item in module_data %}
+      {% set m = item.module %}
+      {% set p = item.progress %}
+      <div class="col-md-6 col-lg-4 module-col" data-topic="{{ m.topic }}">
+        <div class="card border-0 shadow-sm h-100 module-card
+                    {{ 'mandatory-glow' if item.is_mandatory else '' }}">
+          <div class="card-body p-4 d-flex flex-column">
+
+            <!-- Module icon + mandatory badge -->
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <div class="rounded-circle d-flex align-items-center justify-content-center"
+                   style="width:52px;height:52px;background:rgba(10,22,40,.08);flex-shrink:0;">
+                <i class="fa-solid {{ m.icon_class }} fa-lg" style="color:var(--navy)"></i>
+              </div>
+              <div class="d-flex flex-column align-items-end gap-1">
+                {% if item.is_mandatory %}
+                <span class="badge" style="background:var(--orange);font-size:.7rem;">
+                  <i class="fa-solid fa-exclamation me-1"></i>Mandatory
+                </span>
+                {% endif %}
+                <!-- Status badge -->
+                {% if not p or p.status == 'not_started' %}
+                <span class="badge bg-secondary">Not Started</span>
+                {% elif p.status == 'in_progress' %}
+                <span class="badge bg-primary">In Progress</span>
+                {% elif p.status == 'passed' %}
+                <span class="badge bg-success"><i class="fa-solid fa-check me-1"></i>Passed</span>
+                {% elif p.status == 'failed' %}
+                <span class="badge bg-danger">Failed</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Title + meta -->
+            <h6 class="fw-bold mb-1" style="color:var(--navy)">{{ m.title }}</h6>
+            <div class="mb-2">
+              <span class="badge bg-{{ m.topic_color }} me-1" style="font-size:.7rem;">{{ m.topic_label }}</span>
+              <span class="text-muted small">
+                <i class="fa-regular fa-clock me-1"></i>{{ m.estimated_minutes }} min
+              </span>
+            </div>
+            <p class="small text-muted mb-3">{{ m.description[:100] }}{% if m.description|length > 100 %}…{% endif %}</p>
+
+            <!-- Score if attempted -->
+            {% if p and p.quiz_score is not none %}
+            <div class="mb-3">
+              <div class="d-flex justify-content-between small mb-1">
+                <span class="text-muted">Quiz score</span>
+                <span class="fw-bold {{ 'text-success' if p.quiz_passed else 'text-danger' }}">
+                  {{ p.quiz_score }}/100
+                </span>
+              </div>
+              <div class="progress" style="height:6px;">
+                <div class="progress-bar {{ 'bg-success' if p.quiz_passed else 'bg-danger' }}"
+                     style="width:{{ p.quiz_score }}%"></div>
+              </div>
+            </div>
+            {% endif %}
+
+            <!-- Action button -->
+            <div class="mt-auto">
+              {% if not p or p.status == 'not_started' %}
+              <a href="{{ url_for('training.lesson', mid=m.id) }}"
+                 class="btn btn-orange btn-sm w-100">
+                <i class="fa-solid fa-play me-1"></i>Start Module
+              </a>
+              {% elif p.status == 'in_progress' %}
+              <a href="{{ url_for('training.lesson', mid=m.id) }}"
+                 class="btn btn-primary btn-sm w-100">
+                <i class="fa-solid fa-book-open me-1"></i>Continue Lesson
+              </a>
+              {% elif p.status == 'passed' %}
+              <div class="d-flex gap-2">
+                <a href="{{ url_for('training.quiz_result', mid=m.id) }}"
+                   class="btn btn-outline-success btn-sm flex-grow-1">
+                  <i class="fa-solid fa-chart-bar me-1"></i>Results
+                </a>
+                <a href="{{ url_for('training.lesson', mid=m.id) }}"
+                   class="btn btn-outline-secondary btn-sm">
+                  <i class="fa-solid fa-rotate-right"></i>
+                </a>
+              </div>
+              {% elif p.status == 'failed' %}
+              <a href="{{ url_for('training.quiz', mid=m.id) }}"
+                 class="btn btn-warning btn-sm w-100">
+                <i class="fa-solid fa-rotate-right me-1"></i>Retake Quiz
+              </a>
+              {% endif %}
+            </div>
+
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Badges section -->
+    <h5 class="fw-bold mb-3" style="color:var(--navy)">
+      <i class="fa-solid fa-trophy me-2" style="color:var(--orange)"></i>Badges
+    </h5>
+    <div class="row g-3 mb-4">
+      {% for key, meta in ALL_BADGES.items() %}
+      {% set earned = earned_keys and key in earned_keys %}
+      {% set badge_obj = badges | selectattr('badge_key', 'equalto', key) | first | default(none) %}
+      <div class="col-6 col-sm-4 col-md-2">
+        <div class="card border-0 shadow-sm text-center p-3 h-100 badge-slot
+                    {{ '' if earned else 'badge-unearned' }}"
+             data-bs-toggle="tooltip"
+             title="{{ meta.how_to_earn if not earned else 'Earned!' }}">
+          <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-2"
+               style="width:54px;height:54px;
+                      background:{{ ('rgba('+meta.color+',0.15)' if earned else '#f8f9fa') }};
+                      border:2px solid {{ ('var(--orange)' if earned else '#dee2e6') }}">
+            <i class="fa-solid {{ meta.icon }} fa-lg
+                      {{ ('text-'+meta.color) if meta.color not in ('warning','primary') else '' }}
+                      {{ 'text-warning' if meta.color == 'warning' else '' }}
+                      {{ 'text-primary' if meta.color == 'primary' else '' }}"
+               style="{{ 'color:var(--orange)' if earned else '' }}"></i>
+          </div>
+          <div class="small fw-semibold" style="{{ 'color:var(--navy)' if earned else 'color:#6c757d' }}">
+            {{ meta.name }}
+          </div>
+          {% if earned and badge_obj %}
+          <div class="text-muted" style="font-size:.65rem;">
+            {{ badge_obj.earned_at.strftime('%d %b %Y') }}
+          </div>
+          {% else %}
+          <div class="text-muted" style="font-size:.65rem;">Not earned yet</div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <a href="{{ url_for('training.badges') }}" class="btn btn-sm btn-outline-secondary">
+      <i class="fa-solid fa-trophy me-1"></i>View All Badges
+    </a>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Bootstrap tooltips
+document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+  new bootstrap.Tooltip(el);
+});
+
+// Topic filter — show/hide cards by data-topic
+document.querySelectorAll('#topicFilters button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const filter = btn.dataset.filter;
+
+    // Update button styles
+    document.querySelectorAll('#topicFilters button').forEach(b => {
+      b.className = b.dataset.filter === filter
+        ? b.className.replace('btn-outline-', 'btn-').replace(' active-filter', '') + ' active-filter'
+        : b.className.replace(/btn-(danger|warning|info|primary|success|secondary)\b/, 'btn-outline-$1').replace(' active-filter', '');
+    });
+    if (filter === 'all') {
+      document.querySelector('[data-filter="all"]').className = 'btn btn-sm btn-secondary active-filter';
+    }
+
+    // Show/hide cards
+    document.querySelectorAll('#moduleGrid .module-col').forEach(col => {
+      col.style.display = (filter === 'all' || col.dataset.topic === filter) ? '' : 'none';
+    });
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% block title %}My Badges | ESEAS{% endblock %}
+{% block page_title %}Badges{% endblock %}
+
+{% block extra_head %}
+<style>
+.badge-card {
+  transition: transform .2s, box-shadow .2s;
+  cursor: default;
+}
+.badge-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.12) !important; }
+.badge-icon-ring {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 1rem;
+  transition: transform .2s;
+}
+.badge-card:hover .badge-icon-ring { transform: scale(1.08); }
+.badge-unearned { filter: grayscale(100%) opacity(.45); }
+.earned-date { font-size: .65rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+      <div>
+        <h2 class="fw-bold mb-0" style="color:var(--navy)">
+          <i class="fa-solid fa-trophy me-2" style="color:var(--orange)"></i>My Badges
+        </h2>
+        <p class="text-muted small mb-0">Earn badges by completing modules and demonstrating security awareness.</p>
+      </div>
+      <a href="{{ url_for('training.index') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="fa-solid fa-arrow-left me-1"></i>Back to Training
+      </a>
+    </div>
+
+    <!-- Stats bar -->
+    {% set earned_count = earned_map | length %}
+    {% set total_count  = ALL_BADGES | length %}
+    <div class="card border-0 shadow-sm mb-4 p-3">
+      <div class="d-flex flex-wrap align-items-center gap-4">
+        <div class="text-center px-3">
+          <h3 class="fw-bold mb-0" style="color:var(--orange)">{{ earned_count }}</h3>
+          <p class="small text-muted mb-0">Earned</p>
+        </div>
+        <div class="text-center px-3">
+          <h3 class="fw-bold mb-0 text-muted">{{ total_count - earned_count }}</h3>
+          <p class="small text-muted mb-0">Remaining</p>
+        </div>
+        <div class="flex-grow-1 px-3">
+          <div class="d-flex justify-content-between small mb-1">
+            <span class="text-muted">Collection progress</span>
+            <span class="fw-semibold" style="color:var(--navy)">{{ earned_count }} / {{ total_count }}</span>
+          </div>
+          <div class="progress" style="height:8px;">
+            <div class="progress-bar" role="progressbar"
+                 style="width:{{ (earned_count / total_count * 100) | round }}%;background:var(--orange);"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Badge grid -->
+    <div class="row g-4">
+      {% for key, meta in ALL_BADGES.items() %}
+      {% set badge_obj = earned_map.get(key) %}
+      {% set earned    = badge_obj is not none %}
+      <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+        <div class="card border-0 shadow-sm h-100 text-center p-3 badge-card
+                    {{ '' if earned else 'badge-unearned' }}"
+             data-bs-toggle="tooltip"
+             data-bs-placement="top"
+             title="{{ 'Earned on ' + badge_obj.earned_at.strftime('%d %b %Y') if earned else meta.how_to_earn }}">
+
+          <!-- Icon ring -->
+          <div class="badge-icon-ring"
+               style="background:{{ 'rgba(255,107,53,.15)' if earned else '#f8f9fa' }};
+                      border: 2px solid {{ 'var(--orange)' if earned else '#dee2e6' }};">
+            <i class="fa-solid {{ meta.icon }} fa-xl"
+               style="{{ 'color:var(--orange)' if earned else 'color:#adb5bd' }}"></i>
+          </div>
+
+          <div class="fw-semibold small mb-1"
+               style="{{ 'color:var(--navy)' if earned else 'color:#6c757d' }}">
+            {{ meta.name }}
+          </div>
+
+          {% if earned %}
+          <div class="earned-date text-muted">
+            <i class="fa-regular fa-calendar me-1"></i>{{ badge_obj.earned_at.strftime('%d %b %Y') }}
+          </div>
+          {% else %}
+          <div class="earned-date text-muted">Not earned yet</div>
+          {% endif %}
+
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- How to earn section -->
+    <h5 class="fw-bold mt-5 mb-3" style="color:var(--navy)">
+      <i class="fa-solid fa-circle-info me-2" style="color:var(--orange)"></i>How to Earn Badges
+    </h5>
+    <div class="row g-3">
+      {% for key, meta in ALL_BADGES.items() %}
+      {% set earned = key in earned_map %}
+      <div class="col-md-6">
+        <div class="d-flex align-items-start gap-3 p-3 rounded border
+                    {{ 'border-warning bg-warning bg-opacity-10' if earned else '' }}">
+          <i class="fa-solid {{ meta.icon }} fa-lg flex-shrink-0 mt-1"
+             style="color:{{ 'var(--orange)' if earned else '#adb5bd' }}"></i>
+          <div>
+            <div class="fw-semibold small mb-1" style="color:var(--navy)">
+              {{ meta.name }}
+              {% if earned %}
+              <span class="badge bg-success ms-1" style="font-size:.65rem;">Earned</span>
+              {% endif %}
+            </div>
+            <div class="text-muted" style="font-size:.8rem;">{{ meta.how_to_earn }}</div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+  new bootstrap.Tooltip(el);
+});
+</script>
+{% endblock %}

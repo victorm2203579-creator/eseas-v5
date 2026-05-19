@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% block title %}New Campaign | ESEAS{% endblock %}
+{% block page_title %}New Campaign{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container" style="max-width:760px;">
+
+    <div class="mb-4">
+      <a href="{{ url_for('simulator.index') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="fa-solid fa-arrow-left me-1"></i>Back to Simulator
+      </a>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+      <div class="card-header py-3" style="background:var(--navy);">
+        <h5 class="text-white mb-0 fw-semibold">
+          <i class="fa-solid fa-plus me-2" style="color:var(--orange)"></i>Create New Campaign
+        </h5>
+      </div>
+      <div class="card-body p-4">
+
+        <div class="alert alert-warning small mb-4">
+          <i class="fa-solid fa-triangle-exclamation me-2"></i>
+          <strong>Authorised use only.</strong> Run simulations only against users who have
+          consented or are part of your organisation's security awareness programme.
+        </div>
+
+        <form method="POST" action="{{ url_for('simulator.new_campaign') }}">
+
+          <!-- Campaign details -->
+          <h6 class="fw-bold mb-3" style="color:var(--navy);">
+            <i class="fa-solid fa-circle-1 me-2" style="color:var(--orange)"></i>Campaign Details
+          </h6>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Campaign Name <span class="text-danger">*</span></label>
+            <input type="text" name="name" class="form-control"
+                   placeholder="e.g. Q2 Phishing Awareness Test" required maxlength="120" />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Description</label>
+            <textarea name="description" class="form-control" rows="2"
+                      placeholder="Optional internal notes about this campaign"></textarea>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Attack Type <span class="text-danger">*</span></label>
+              <select name="attack_type" class="form-select" required>
+                <option value="" disabled selected>— Select type —</option>
+                {% for at in attack_types %}
+                <option value="{{ at.id }}">{{ at.label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Email Template</label>
+              <select name="template_id" class="form-select">
+                <option value="">— None (generic email) —</option>
+                {% for tmpl in templates %}
+                <option value="{{ tmpl.id }}">{{ tmpl.name }} ({{ tmpl.attack_type_label }})</option>
+                {% endfor %}
+              </select>
+              <div class="form-text">
+                <a href="{{ url_for('simulator.new_template') }}" target="_blank" style="color:var(--orange);">
+                  + Create a new template
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <hr class="my-4" />
+
+          <!-- Target users -->
+          <h6 class="fw-bold mb-1" style="color:var(--navy);">
+            <i class="fa-solid fa-circle-2 me-2" style="color:var(--orange)"></i>Select Target Users
+          </h6>
+          <p class="text-muted small mb-3">Check the users who will receive the simulated phishing email.</p>
+
+          {% if users %}
+          <div class="border rounded p-3 mb-4" style="max-height:260px; overflow-y:auto;">
+            <div class="d-flex justify-content-between mb-2">
+              <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" id="selectAll">
+                Select All
+              </button>
+              <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-muted" id="clearAll">
+                Clear All
+              </button>
+            </div>
+            {% for user in users %}
+            <div class="form-check mb-1">
+              <input class="form-check-input target-checkbox" type="checkbox"
+                     name="target_users" value="{{ user.id }}"
+                     id="user_{{ user.id }}" />
+              <label class="form-check-label small" for="user_{{ user.id }}">
+                <span class="fw-semibold">{{ user.name }}</span>
+                <span class="text-muted ms-1">{{ user.email }}</span>
+                {% if user.role == 'admin' %}
+                <span class="badge bg-warning text-dark ms-1" style="font-size:.65rem;">admin</span>
+                {% endif %}
+              </label>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="mb-4 small text-muted">
+            <span id="selectedCount">0</span> user(s) selected
+          </div>
+          {% else %}
+          <div class="alert alert-info small mb-4">
+            <i class="fa-solid fa-circle-info me-2"></i>
+            No active users found.
+            <a href="{{ url_for('admin_bp.users') }}" style="color:var(--orange);">Manage users →</a>
+          </div>
+          {% endif %}
+
+          <hr class="my-4" />
+
+          <!-- Launch options -->
+          <h6 class="fw-bold mb-3" style="color:var(--navy);">
+            <i class="fa-solid fa-circle-3 me-2" style="color:var(--orange)"></i>Launch Options
+          </h6>
+
+          <div class="mb-4">
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="radio" name="schedule_type" id="sched_draft"
+                     value="draft" checked />
+              <label class="form-check-label" for="sched_draft">
+                <span class="fw-semibold">Save as Draft</span>
+                <span class="text-muted small d-block">Create the campaign without sending emails. You can launch it manually later.</span>
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="schedule_type" id="sched_launch"
+                     value="launch" />
+              <label class="form-check-label" for="sched_launch">
+                <span class="fw-semibold">Launch Immediately</span>
+                <span class="text-muted small d-block">Send the phishing email to all selected targets right now.</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-orange">
+              <i class="fa-solid fa-floppy-disk me-1"></i>Create Campaign
+            </button>
+            <a href="{{ url_for('simulator.index') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const checkboxes = document.querySelectorAll('.target-checkbox');
+const counter    = document.getElementById('selectedCount');
+
+function updateCount() {
+  const n = document.querySelectorAll('.target-checkbox:checked').length;
+  if (counter) counter.textContent = n;
+}
+
+checkboxes.forEach(cb => cb.addEventListener('change', updateCount));
+
+document.getElementById('selectAll')?.addEventListener('click', () => {
+  checkboxes.forEach(cb => { cb.checked = true; });
+  updateCount();
+});
+document.getElementById('clearAll')?.addEventListener('click', () => {
+  checkboxes.forEach(cb => { cb.checked = false; });
+  updateCount();
+});
+</script>
+{% endblock %}

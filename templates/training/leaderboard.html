@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% block title %}Security Leaderboard | ESEAS{% endblock %}
+{% block page_title %}Leaderboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1><i class="fa-solid fa-ranking-star me-2" style="color:var(--accent)"></i>Security Leaderboard</h1>
+    <p class="page-header-subtitle">Rankings based on security score = 100 - risk + badges×5 + modules×2</p>
+  </div>
+  <a href="{{ url_for('training.index') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="fa-solid fa-arrow-left me-1"></i>Back to Training
+  </a>
+</div>
+
+<!-- Podium (top 3) -->
+{% if top3 %}
+<div class="card-dark mb-4">
+  <div class="card-header">
+    <h6 class="mb-0 fw-semibold" style="color:var(--text-primary)">
+      <i class="fa-solid fa-trophy me-2" style="color:var(--warning)"></i>Top Performers
+    </h6>
+  </div>
+  <div class="card-body">
+    <div class="d-flex justify-content-center gap-4 flex-wrap py-2">
+      {% for row in top3 %}
+      {% set medal_color = '#f59e0b' if loop.index == 1 else ('#94a3b8' if loop.index == 2 else '#cd7f32') %}
+      {% set medal_icon  = 'fa-trophy' if loop.index == 1 else ('fa-medal' if loop.index == 2 else 'fa-award') %}
+      <div class="text-center {% if row.is_current %}p-3 rounded{% endif %}"
+           style="{% if row.is_current %}background:var(--accent-dim);border:1px solid var(--accent-border);{% endif %}min-width:140px;">
+        <i class="fa-solid {{ medal_icon }} fa-2x mb-2" style="color:{{ medal_color }}"></i>
+        <div class="sidebar-avatar mx-auto mb-2">{{ row.user.avatar_initials }}</div>
+        <div class="fw-semibold" style="font-size:.85rem;color:var(--text-primary);">{{ row.user.name }}</div>
+        <div style="font-size:1.4rem;font-weight:800;color:{{ medal_color }};">{{ row.security_score }}</div>
+        <div class="text-muted" style="font-size:.7rem;">Security Score</div>
+        {% if row.is_current %}
+        <span class="badge mt-1" style="background:var(--accent-dim);color:var(--accent);font-size:.65rem;">You</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Full ranking table -->
+<div class="card-dark">
+  <div class="card-header">
+    <h6 class="mb-0 fw-semibold" style="color:var(--text-primary)">
+      <i class="fa-solid fa-list-ol me-2" style="color:var(--accent)"></i>Full Rankings
+    </h6>
+  </div>
+  <div class="table-responsive">
+    <table class="datatable">
+      <thead>
+        <tr>
+          <th style="width:50px;">Rank</th>
+          <th>Name</th>
+          <th>Score</th>
+          <th>Modules Passed</th>
+          <th>Badges</th>
+          <th>Risk Level</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in board %}
+        <tr {% if row.is_current %}style="background:var(--accent-dim) !important;border-left:3px solid var(--accent);"{% endif %}>
+          <td class="fw-bold text-center" style="color:{% if row.rank == 1 %}#f59e0b{% elif row.rank == 2 %}#94a3b8{% elif row.rank == 3 %}#cd7f32{% else %}var(--text-secondary){% endif %};">
+            {% if row.rank <= 3 %}
+              <i class="fa-solid {% if row.rank == 1 %}fa-trophy{% elif row.rank == 2 %}fa-medal{% else %}fa-award{% endif %}"></i>
+            {% else %}
+              {{ row.rank }}
+            {% endif %}
+          </td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="sidebar-avatar" style="width:28px;height:28px;font-size:.65rem;">{{ row.user.avatar_initials }}</div>
+              <div>
+                <div class="fw-semibold" style="font-size:.84rem;">
+                  {{ row.user.name }}
+                  {% if row.is_current %}
+                  <span class="badge ms-1" style="background:var(--accent-dim);color:var(--accent);font-size:.62rem;">You</span>
+                  {% endif %}
+                </div>
+                <div class="text-muted" style="font-size:.72rem;">{{ row.user.email }}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="fw-bold" style="font-size:1rem;color:var(--accent);">{{ row.security_score }}</span>
+          </td>
+          <td>
+            <span class="fw-semibold">{{ row.modules_passed }}</span>
+            <span class="text-muted" style="font-size:.75rem;">/ {{ total_modules }}</span>
+          </td>
+          <td>
+            {% if row.badges > 0 %}
+              <i class="fa-solid fa-trophy text-warning me-1"></i>
+            {% endif %}
+            {{ row.badges }}
+          </td>
+          <td>
+            {% if row.risk_level == 'High' %}
+              <span class="badge badge-danger">High</span>
+            {% elif row.risk_level == 'Medium' %}
+              <span class="badge badge-warn">Medium</span>
+            {% else %}
+              <span class="badge badge-safe">Low</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center py-4 text-muted">No users yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

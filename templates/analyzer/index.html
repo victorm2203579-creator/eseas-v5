@@ -1,0 +1,947 @@
+{% extends 'base.html' %}
+{% block title %}Phishing URL Scanner | ESEAS{% endblock %}
+{% block page_title %}URL Scanner{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Gauge SVG ── */
+.gauge-wrap    { position:relative; width:240px; height:140px; margin:0 auto; }
+.gauge-svg     { width:240px; height:140px; }
+.gauge-bg      { fill:none; stroke:#e9ecef; stroke-width:18; stroke-linecap:round; }
+.gauge-arc     { fill:none; stroke-width:18; stroke-linecap:round;
+                 transition: stroke-dashoffset .8s ease, stroke .5s ease; }
+.gauge-score   { position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+                 text-align:center; line-height:1; }
+.gauge-num     { font-size:2.4rem; font-weight:800; color:var(--navy); }
+.gauge-pct     { font-size:1rem; font-weight:600; color:#6c757d; }
+
+/* ── Feature table flags ── */
+.flag-pass  { color:#198754; }
+.flag-warn  { color:#fd7e14; }
+.flag-fail  { color:#dc3545; }
+
+/* ── Spinner overlay ── */
+#scanSpinner { display:none; }
+
+/* ── Result panel ── */
+#resultPanel { display:none; }
+
+/* ── Risk label sizes ── */
+.risk-badge { font-size:1.1rem; padding:.45rem 1.2rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+
+    <!-- Page header -->
+    <div class="text-center mb-5">
+      <h2 class="fw-bold" style="color:var(--navy)">
+        <i class="fa-solid fa-magnifying-glass me-2" style="color:var(--orange)"></i>
+        Phishing URL Scanner
+      </h2>
+      <p class="text-muted">Paste any suspicious link to get an instant AI-powered risk assessment.</p>
+    </div>
+
+    <!-- Input card -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body p-4">
+        <div class="input-group input-group-lg">
+          <span class="input-group-text" style="background:var(--navy); color:#fff; border:none; border-radius:.5rem 0 0 .5rem;">
+            <i class="fa-solid fa-link"></i>
+          </span>
+          <input type="text" id="urlInput" class="form-control form-control-lg border-0 shadow-none"
+                 placeholder="Paste suspicious URL here…  e.g. https://paypa1-login.tk/verify"
+                 style="border-radius:0;" />
+          <button id="scanBtn" class="btn btn-orange btn-lg px-5"
+                  style="border-radius:0 .5rem .5rem 0;">
+            <i class="fa-solid fa-shield-virus me-2"></i>
+            <span id="scanBtnLabel">Scan URL</span>
+            <span class="spinner-border spinner-border-sm ms-2" id="scanSpinner"
+                  role="status" style="display:none;"></span>
+          </button>
+        </div>
+
+        <!-- Progress bar (shown while scanning) -->
+        <div id="scanProgress" class="mt-3" style="display:none;">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="small text-muted" id="scanStatusText">Preparing scan…</span>
+            <span class="small fw-semibold" id="scanPct" style="color:var(--orange);">0%</span>
+          </div>
+          <div class="progress" style="height:6px; border-radius:4px;">
+            <div id="scanProgressBar"
+                 class="progress-bar progress-bar-striped progress-bar-animated"
+                 role="progressbar"
+                 style="width:0%; background:var(--orange); transition:width .4s ease;"></div>
+          </div>
+        </div>
+
+
+        <div id="urlError" class="text-danger small mt-2" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════ RESULTS PANEL ══════════════ -->
+    <div id="resultPanel">
+
+      <!-- Row 1: Gauge + external checks -->
+      <div class="row g-4 mb-4">
+
+        <!-- Gauge card -->
+        <div class="col-lg-4">
+          <div class="card border-0 shadow-sm h-100 text-center p-4">
+            <h6 class="text-muted fw-semibold text-uppercase mb-3" style="letter-spacing:.06em;">Risk Score</h6>
+
+            <!-- SVG Semicircle Gauge -->
+            <div class="gauge-wrap mx-auto mb-3">
+              <svg class="gauge-svg" viewBox="0 0 240 140">
+                <!-- Background arc: centre (120,120), r=90, from 180° to 0° -->
+                <path class="gauge-bg"
+                      d="M 30,120 A 90,90 0 0,1 210,120" />
+                <!-- Filled arc -->
+                <path id="gaugeArc" class="gauge-arc"
+                      d="M 30,120 A 90,90 0 0,1 210,120"
+                      stroke="#198754"
+                      stroke-dasharray="282.74"
+                      stroke-dashoffset="282.74" />
+              </svg>
+              <div class="gauge-score">
+                <div class="gauge-num" id="gaugeNum">0</div>
+                <div class="gauge-pct">/ 100</div>
+              </div>
+            </div>
+
+            <!-- Risk label badge -->
+            <div class="mb-3">
+              <span id="riskBadge" class="badge risk-badge bg-success">Safe</span>
+            </div>
+
+            <!-- Model status note -->
+            <p id="modelNote" class="text-muted small mb-0" style="display:none;">
+              <i class="fa-solid fa-triangle-exclamation text-warning me-1"></i>
+              Heuristic mode — train the ML model for higher accuracy.
+            </p>
+          </div>
+        </div>
+
+        <!-- External checks card -->
+        <div class="col-lg-8">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-header py-3" style="background:var(--navy);">
+              <h6 class="text-white mb-0 fw-semibold">
+                <i class="fa-solid fa-globe me-2" style="color:var(--orange)"></i>External Intelligence
+              </h6>
+            </div>
+            <div class="card-body p-4">
+
+              <!-- VirusTotal -->
+              <div class="d-flex align-items-start gap-3 mb-4">
+                <div style="width:36px;text-align:center;flex-shrink:0;">
+                  <i class="fa-solid fa-virus fa-lg" style="color:#394d9e"></i>
+                </div>
+                <div class="flex-grow-1">
+                  <div class="fw-semibold mb-1">VirusTotal</div>
+                  <div id="vtResult" class="small text-muted">—</div>
+                  <div id="vtThreats" class="small text-danger mt-1"></div>
+                  <a id="vtLink" href="#" target="_blank" rel="noopener"
+                     class="small text-decoration-none mt-1 d-none" style="color:var(--orange)">
+                    View full report <i class="fa-solid fa-arrow-up-right-from-square ms-1"></i>
+                  </a>
+                </div>
+              </div>
+
+              <!-- Google Safe Browsing -->
+              <div class="d-flex align-items-start gap-3 mb-4">
+                <div style="width:36px;text-align:center;flex-shrink:0;">
+                  <i class="fa-brands fa-google fa-lg" style="color:#4285f4"></i>
+                </div>
+                <div class="flex-grow-1">
+                  <div class="fw-semibold mb-1">Google Safe Browsing</div>
+                  <div id="gsbResult" class="small text-muted">—</div>
+                </div>
+              </div>
+
+              <!-- WHOIS / Domain Age -->
+              <div class="d-flex align-items-start gap-3">
+                <div style="width:36px;text-align:center;flex-shrink:0;">
+                  <i class="fa-solid fa-calendar-days fa-lg text-secondary"></i>
+                </div>
+                <div class="flex-grow-1">
+                  <div class="fw-semibold mb-1">Domain Age (WHOIS)</div>
+                  <div id="domainAge" class="small text-muted">—</div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div><!-- /row 1 -->
+
+      <!-- Row 2: Feature table + recommendation -->
+      <div class="row g-4 mb-4">
+
+        <!-- Feature breakdown -->
+        <div class="col-lg-7">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-header py-3" style="background:var(--navy);">
+              <h6 class="text-white mb-0 fw-semibold">
+                <i class="fa-solid fa-list-check me-2" style="color:var(--orange)"></i>Feature Breakdown
+              </h6>
+            </div>
+            <div class="card-body p-0">
+              <table class="table table-sm table-hover mb-0" id="featureTable">
+                <thead class="table-light">
+                  <tr>
+                    <th class="ps-3 py-2">Feature</th>
+                    <th class="py-2">Value</th>
+                    <th class="py-2 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="featureTbody">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recommendation -->
+        <div class="col-lg-5">
+          <div id="recommendCard" class="card border-0 shadow-sm h-100 border-start border-4 border-success">
+            <div class="card-body p-4">
+              <h6 class="fw-bold mb-3">
+                <i class="fa-solid fa-shield-check me-2"></i>Recommendation
+              </h6>
+              <p id="recommendText" class="mb-0" style="line-height:1.7;"></p>
+
+              <hr class="my-3" />
+
+              <div class="d-flex gap-2 flex-wrap">
+                <a href="{{ url_for('analyzer.history') }}" class="btn btn-sm btn-outline-secondary">
+                  <i class="fa-solid fa-clock-rotate-left me-1"></i>My History
+                </a>
+                <button id="scanAgainBtn" class="btn btn-sm btn-orange">
+                  <i class="fa-solid fa-rotate me-1"></i>Scan Another
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /row 2 -->
+      <!-- Row 3: Why This Decision? -->
+      <div id="explanationSection" style="display:none;">
+        <!-- Verdict Summary banner -->
+        <div id="verdictBanner" class="alert d-flex align-items-start gap-3 mb-4 border-0 rounded-3 shadow-sm">
+          <i id="verdictIcon" class="fa-solid fa-shield-halved fa-2x flex-shrink-0 mt-1"></i>
+          <div class="flex-grow-1">
+            <h6 class="fw-bold mb-1">Why This Decision?</h6>
+            <p id="verdictSummary" class="mb-1"></p>
+            <small id="verdictCounts" class="opacity-75"></small>
+          </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+          <!-- Risk Factors accordion -->
+          <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header py-3 bg-danger bg-opacity-10">
+                <h6 class="fw-bold mb-0 text-danger">
+                  <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                  <span id="riskAccordionTitle">Risk Factors Found</span>
+                </h6>
+              </div>
+              <div class="card-body p-0">
+                <div id="riskAccordion" class="accordion accordion-flush"></div>
+                <div id="riskAccordionEmpty" class="p-3 text-muted small d-none">
+                  <i class="fa-solid fa-circle-check text-success me-2"></i>No significant risk factors detected.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Clean Factors accordion -->
+          <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header py-3 bg-success bg-opacity-10">
+                <h6 class="fw-bold mb-0 text-success">
+                  <i class="fa-solid fa-circle-check me-2"></i>
+                  <span id="cleanAccordionTitle">Factors That Passed</span>
+                </h6>
+              </div>
+              <div class="card-body p-0">
+                <div id="cleanAccordion" class="accordion accordion-flush"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Advice banner -->
+        <div id="adviceBanner" class="alert d-flex align-items-start gap-3 border-0 rounded-3 shadow-sm mb-4">
+          <i id="adviceIcon" class="fa-solid fa-lightbulb fa-2x flex-shrink-0 mt-1"></i>
+          <div>
+            <strong>Advice:</strong>
+            <span id="adviceText"></span>
+          </div>
+        </div>
+      </div><!-- /explanationSection -->
+
+    </div><!-- /resultPanel -->
+
+    <!-- ══════════════ SCAN HISTORY ══════════════ -->
+    <div class="mt-5 pt-2" id="histSection">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0" style="color:var(--navy)">
+          <i class="fa-solid fa-clock-rotate-left me-2" style="color:var(--orange)"></i>
+          Your Recent Scans
+        </h5>
+        <a href="{{ url_for('analyzer.history') }}" class="btn btn-sm btn-outline-secondary">
+          <i class="fa-solid fa-table-list me-1"></i>Full History
+        </a>
+      </div>
+
+      <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead style="background:var(--navy);">
+              <tr>
+                <th class="text-white fw-semibold ps-4 py-3" style="font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;">URL</th>
+                <th class="text-white fw-semibold py-3" style="font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;min-width:130px;">Risk Score</th>
+                <th class="text-white fw-semibold py-3" style="font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;">Label</th>
+                <th class="text-white fw-semibold py-3" style="font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;">Scanned</th>
+                <th class="text-white fw-semibold pe-4 py-3" style="font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;text-align:right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="histTbody">
+              {% for s in recent_scans %}
+              <tr class="scan-hist-row" style="transition:background .15s;">
+                <td class="ps-4" style="max-width:280px;">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="rounded-circle flex-shrink-0"
+                          style="width:8px;height:8px;background:{% if s.risk_color == 'danger' %}#dc3545{% elif s.risk_color == 'warning' %}#fd7e14{% else %}#198754{% endif %};display:inline-block;"></span>
+                    <span class="small font-monospace text-truncate" title="{{ s.url }}"
+                          style="max-width:240px;">{{ s.short_url }}</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="progress flex-grow-1" style="height:5px;max-width:80px;">
+                      <div class="progress-bar bg-{{ s.risk_color }}"
+                           style="width:{{ s.final_score }}%"></div>
+                    </div>
+                    <span class="fw-bold small text-{{ s.risk_color }}">
+                      {{ "%.0f"|format(s.final_score) }}
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge bg-{{ s.risk_color }} px-2 py-1">
+                    {% if s.risk_color == 'danger' %}<i class="fa-solid fa-skull-crossbones me-1"></i>
+                    {% elif s.risk_color == 'warning' %}<i class="fa-solid fa-triangle-exclamation me-1"></i>
+                    {% else %}<i class="fa-solid fa-circle-check me-1"></i>{% endif %}
+                    {{ s.final_label }}
+                  </span>
+                </td>
+                <td class="small text-muted text-nowrap">
+                  <i class="fa-regular fa-clock me-1 opacity-50"></i>
+                  {{ s.scanned_at.strftime('%d %b %Y, %H:%M') }}
+                </td>
+                <td class="pe-4 text-end">
+                  <div class="d-flex gap-1 justify-content-end">
+                    <button class="btn btn-sm btn-outline-primary hist-why-btn"
+                            data-id="{{ s.id }}" title="Why this score?">
+                      <i class="fa-solid fa-circle-question me-1"></i>Why?
+                    </button>
+                    <a href="{{ url_for('analyzer.detail', scan_id=s.id) }}"
+                       class="btn btn-sm btn-outline-secondary" title="Full details">
+                      <i class="fa-solid fa-eye"></i>
+                    </a>
+                    <button class="btn btn-sm btn-outline-danger hist-delete-btn"
+                            data-id="{{ s.id }}" title="Delete">
+                      <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+              {% if not recent_scans %}
+              <tr id="histEmptyRow">
+                <td colspan="5" class="text-center py-5 text-muted">
+                  <i class="fa-solid fa-magnifying-glass fa-2x mb-3 d-block opacity-25"></i>
+                  No scans yet — results will appear here instantly after your first scan.
+                </td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+        <div class="card-footer py-2 px-4 text-muted small d-flex justify-content-between align-items-center"
+             style="background:#f8f9fa;border-top:1px solid #e9ecef;">
+          <span id="histCount">Showing last {{ recent_scans|length }} scan{{ 's' if recent_scans|length != 1 else '' }}</span>
+          <a href="{{ url_for('analyzer.export') }}" class="text-decoration-none" style="color:var(--orange);">
+            <i class="fa-solid fa-download me-1"></i>Export CSV
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Why? Modal (History section) -->
+    <div class="modal fade" id="histWhyModal" tabindex="-1">
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+          <div class="modal-header" style="background:var(--navy);border:none;">
+            <h5 class="modal-title fw-bold text-white">
+              <i class="fa-solid fa-circle-question me-2" style="color:var(--orange)"></i>Why This Score?
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body" id="histWhyBody">
+            <div class="text-center py-4">
+              <div class="spinner-border" style="color:var(--orange);" role="status"></div>
+            </div>
+          </div>
+          <div class="modal-footer border-0">
+            <a id="histWhyDetailLink" href="#" class="btn btn-sm btn-orange">
+              <i class="fa-solid fa-eye me-1"></i>Full Details
+            </a>
+            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+/* ─────────────────────────────────────────────────────────
+   ESEAS — Analyzer Scanner UI
+   ───────────────────────────────────────────────────────── */
+
+const SCAN_URL = '{{ url_for("analyzer.scan") }}';
+
+// ── Gauge math ───────────────────────────────────────────
+// Semicircle arc: M 30,120 A 90,90 0 0,1 210,120
+// Total arc length ≈ π × r = π × 90 ≈ 282.74
+const ARC_LEN = 282.74;
+
+function setGauge(score) {
+  const arc   = document.getElementById('gaugeArc');
+  const num   = document.getElementById('gaugeNum');
+  const badge = document.getElementById('riskBadge');
+
+  const offset = ARC_LEN - (score / 100) * ARC_LEN;
+
+  let color, badgeClass, label;
+  if (score >= 70) {
+    color = '#dc3545'; badgeClass = 'bg-danger'; label = 'Dangerous';
+  } else if (score >= 40) {
+    color = '#fd7e14'; badgeClass = 'bg-warning text-dark'; label = 'Suspicious';
+  } else {
+    color = '#198754'; badgeClass = 'bg-success'; label = 'Safe';
+  }
+
+  arc.style.stroke            = color;
+  arc.style.strokeDashoffset  = offset;
+  num.textContent             = score;
+  num.style.color             = color;
+  badge.className             = `badge risk-badge ${badgeClass}`;
+  badge.textContent           = label;
+}
+
+// ── Feature table ────────────────────────────────────────
+const FLAG_ICONS = {
+  pass: '<i class="fa-solid fa-circle-check flag-pass"></i>',
+  warn: '<i class="fa-solid fa-triangle-exclamation flag-warn"></i>',
+  fail: '<i class="fa-solid fa-circle-xmark flag-fail"></i>',
+};
+
+function buildFeatureTable(features, flags, labels) {
+  const tbody = document.getElementById('featureTbody');
+  tbody.innerHTML = '';
+  Object.entries(features).forEach(([name, val]) => {
+    const flag  = flags[name]  || 'pass';
+    const label = labels[name] || name;
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td class="ps-3 small">${label}</td>
+      <td class="small font-monospace">${val}</td>
+      <td class="text-center">${FLAG_ICONS[flag] || ''}</td>`;
+    tbody.appendChild(row);
+  });
+}
+
+// ── External results ─────────────────────────────────────
+function renderVT(vt) {
+  const el = document.getElementById('vtResult');
+  const link = document.getElementById('vtLink');
+  const threats = document.getElementById('vtThreats');
+
+  if (vt.error) {
+    const isSubmitted = vt.error.toLowerCase().includes('submitted') || vt.error.toLowerCase().includes('check back');
+    el.innerHTML = isSubmitted
+      ? '<span class="text-warning"><i class="fa-solid fa-clock me-1"></i>URL submitted to VirusTotal for analysis — results available on next scan</span>'
+      : `<span class="text-muted">${vt.error}</span>`;
+    return;
+  }
+  const detected = vt.detections || 0;
+  const total    = vt.total_engines || 0;
+  el.innerHTML = detected > 0
+    ? `<span class="text-danger fw-bold"><i class="fa-solid fa-skull-crossbones me-1"></i>${detected}/${total} engines flagged this URL as malicious</span>`
+    : `<span class="text-success"><i class="fa-solid fa-shield-check me-1"></i>${total > 0 ? `0/${total} engines — no threats detected` : 'No cached results'}</span>`;
+
+  if (vt.threat_names && vt.threat_names.length) {
+    threats.textContent = 'Threats: ' + vt.threat_names.join(', ');
+  }
+  if (vt.permalink) {
+    link.href = vt.permalink;
+    link.classList.remove('d-none');
+  }
+}
+
+function renderGSB(gsb) {
+  const el = document.getElementById('gsbResult');
+  if (gsb.error) { el.textContent = gsb.error; return; }
+  if (!gsb.threat_type) { el.textContent = '—'; return; }
+  if (gsb.threat_type === 'clean') {
+    el.innerHTML = '<span class="text-success"><i class="fa-solid fa-shield-check me-1"></i>No threats detected</span>';
+  } else {
+    el.innerHTML = `<span class="text-danger"><i class="fa-solid fa-skull-crossbones me-1"></i>${gsb.threat_type}${gsb.platform ? ' on ' + gsb.platform : ''}</span>`;
+  }
+}
+
+function renderDomainAge(days) {
+  const el = document.getElementById('domainAge');
+  if (days < 0) { el.textContent = 'Unavailable (WHOIS lookup failed)'; return; }
+  const years = Math.floor(days / 365);
+  const months = Math.floor((days % 365) / 30);
+  let txt = days === 0 ? '<1 day' : `${days} days`;
+  if (years > 0) txt = `${years}y ${months}m (${days} days)`;
+  const cls = days < 30 ? 'text-danger' : days < 180 ? 'text-warning' : 'text-success';
+  el.innerHTML = `<span class="${cls}">${txt}</span>`;
+}
+
+// ── Explanation section ──────────────────────────────────
+function renderExplanation(expl, riskColor) {
+  if (!expl || !expl.verdict_summary) {
+    document.getElementById('explanationSection').style.display = 'none';
+    return;
+  }
+
+  // Verdict banner
+  const verdictBanner = document.getElementById('verdictBanner');
+  const verdictIcon   = document.getElementById('verdictIcon');
+  verdictBanner.className = 'alert d-flex align-items-start gap-3 mb-4 border-0 rounded-3 shadow-sm';
+  if (riskColor === 'danger') {
+    verdictBanner.classList.add('alert-danger');
+    verdictIcon.className = 'fa-solid fa-skull-crossbones fa-2x flex-shrink-0 mt-1 text-danger';
+  } else if (riskColor === 'warning') {
+    verdictBanner.classList.add('alert-warning');
+    verdictIcon.className = 'fa-solid fa-triangle-exclamation fa-2x flex-shrink-0 mt-1 text-warning';
+  } else {
+    verdictBanner.classList.add('alert-success');
+    verdictIcon.className = 'fa-solid fa-shield-check fa-2x flex-shrink-0 mt-1 text-success';
+  }
+  document.getElementById('verdictSummary').textContent = expl.verdict_summary;
+  document.getElementById('verdictCounts').textContent =
+    `${expl.risk_factors_count} risk factor${expl.risk_factors_count !== 1 ? 's' : ''} found · ` +
+    `${expl.clean_factors_count} factor${expl.clean_factors_count !== 1 ? 's' : ''} passed clean`;
+
+  // Risk accordion
+  const riskAcc   = document.getElementById('riskAccordion');
+  const riskEmpty = document.getElementById('riskAccordionEmpty');
+  const riskTitle = document.getElementById('riskAccordionTitle');
+  riskAcc.innerHTML = '';
+  document.getElementById('riskAccordionTitle').textContent =
+    `Risk Factors Found (${expl.triggered_flags.length})`;
+  if (expl.triggered_flags.length === 0) {
+    riskEmpty.classList.remove('d-none');
+  } else {
+    riskEmpty.classList.add('d-none');
+    expl.triggered_flags.forEach((flag, i) => {
+      const sevColor = flag.severity === 'high' ? 'danger' : flag.severity === 'medium' ? 'warning' : 'secondary';
+      const item = document.createElement('div');
+      item.className = 'accordion-item border-0 border-bottom';
+      item.innerHTML = `
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed py-2 px-3 small" type="button"
+                  data-bs-toggle="collapse" data-bs-target="#riskItem${i}">
+            <span class="fw-semibold me-2">${flag.feature}</span>
+            <span class="badge bg-${sevColor} me-2">${flag.severity.toUpperCase()}</span>
+            <span class="text-muted font-monospace">${flag.value}</span>
+          </button>
+        </h2>
+        <div id="riskItem${i}" class="accordion-collapse collapse">
+          <div class="accordion-body py-2 px-3 small text-muted">${flag.explanation}</div>
+        </div>`;
+      riskAcc.appendChild(item);
+    });
+  }
+
+  // Clean accordion
+  const cleanAcc = document.getElementById('cleanAccordion');
+  cleanAcc.innerHTML = '';
+  document.getElementById('cleanAccordionTitle').textContent =
+    `Factors That Passed (${expl.clean_flags.length})`;
+  expl.clean_flags.forEach((flag, i) => {
+    const item = document.createElement('div');
+    item.className = 'accordion-item border-0 border-bottom';
+    item.innerHTML = `
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed py-2 px-3 small" type="button"
+                data-bs-toggle="collapse" data-bs-target="#cleanItem${i}">
+          <i class="fa-solid fa-circle-check text-success me-2"></i>
+          <span class="fw-semibold me-2">${flag.feature}</span>
+          <span class="text-muted font-monospace">${flag.value}</span>
+        </button>
+      </h2>
+      <div id="cleanItem${i}" class="accordion-collapse collapse">
+        <div class="accordion-body py-2 px-3 small text-muted">${flag.explanation}</div>
+      </div>`;
+    cleanAcc.appendChild(item);
+  });
+
+  // Advice banner
+  const adviceBanner = document.getElementById('adviceBanner');
+  const adviceIcon   = document.getElementById('adviceIcon');
+  adviceBanner.className = 'alert d-flex align-items-start gap-3 border-0 rounded-3 shadow-sm mb-4';
+  if (riskColor === 'danger') {
+    adviceBanner.classList.add('alert-danger');
+    adviceIcon.className = 'fa-solid fa-ban fa-2x flex-shrink-0 mt-1 text-danger';
+  } else if (riskColor === 'warning') {
+    adviceBanner.classList.add('alert-warning');
+    adviceIcon.className = 'fa-solid fa-eye fa-2x flex-shrink-0 mt-1 text-warning';
+  } else {
+    adviceBanner.classList.add('alert-success');
+    adviceIcon.className = 'fa-solid fa-lightbulb fa-2x flex-shrink-0 mt-1 text-success';
+  }
+  document.getElementById('adviceText').textContent = expl.advice;
+
+  document.getElementById('explanationSection').style.display = '';
+}
+
+// ── Recommendation card style ────────────────────────────
+function styleRecommendCard(color) {
+  const card = document.getElementById('recommendCard');
+  card.className = 'card border-0 shadow-sm h-100 border-start border-4';
+  if (color === 'danger')  card.classList.add('border-danger', 'bg-danger-subtle');
+  else if (color === 'warning') card.classList.add('border-warning', 'bg-warning-subtle');
+  else card.classList.add('border-success', 'bg-success-subtle');
+}
+
+// ── Progress bar animation ────────────────────────────────
+const SCAN_STEPS = [
+  { ceil: 8,  msg: '<i class="fa-solid fa-gear fa-spin me-1 text-muted"></i>Initialising scanner — parsing URL scheme, host and path structure…' },
+  { ceil: 18, msg: '<i class="fa-solid fa-code me-1" style="color:#8b5cf6"></i>Extracting 20+ lexical &amp; structural URL features (length, entropy, special chars, TLD…)' },
+  { ceil: 30, msg: '<i class="fa-solid fa-virus me-1" style="color:#394d9e"></i>Connecting to VirusTotal API — submitting URL hash to 70+ AV engine database…' },
+  { ceil: 50, msg: '<i class="fa-solid fa-virus me-1" style="color:#394d9e"></i>VirusTotal scan in progress — cross-referencing against malware &amp; phishing signatures…' },
+  { ceil: 63, msg: '<i class="fa-brands fa-google me-1" style="color:#4285f4"></i>Querying Google Safe Browsing — checking MALWARE, PHISHING &amp; UNWANTED_SOFTWARE lists…' },
+  { ceil: 74, msg: '<i class="fa-solid fa-calendar-days me-1 text-secondary"></i>Running WHOIS lookup — retrieving domain registration date and registrar data…' },
+  { ceil: 85, msg: '<i class="fa-solid fa-brain me-1" style="color:#f97316"></i>Running Random Forest ML classifier on extracted feature vector…' },
+  { ceil: 94, msg: '<i class="fa-solid fa-chart-line me-1" style="color:#10b981"></i>Correlating ML prediction with external threat intelligence signals…' },
+  { ceil: 98, msg: '<i class="fa-solid fa-file-shield me-1" style="color:#f97316"></i>Calculating composite risk score and generating security report…' },
+];
+
+function startProgress() {
+  const bar    = document.getElementById('scanProgressBar');
+  const text   = document.getElementById('scanStatusText');
+  const pct    = document.getElementById('scanPct');
+  let current  = 0;
+
+  bar.style.width = '0%';
+  bar.style.background = 'var(--orange)';
+  bar.classList.add('progress-bar-striped', 'progress-bar-animated');
+  pct.textContent = '0%';
+  text.innerHTML = SCAN_STEPS[0].msg;
+  document.getElementById('scanProgress').style.display = '';
+
+  return setInterval(() => {
+    const step = SCAN_STEPS.find(s => current < s.ceil) || SCAN_STEPS[SCAN_STEPS.length - 1];
+    const increment = Math.random() * 3 + 0.8;
+    current = Math.min(current + increment, step.ceil);
+    bar.style.width  = current + '%';
+    pct.textContent  = Math.round(current) + '%';
+    text.innerHTML   = step.msg;
+  }, 400);
+}
+
+function finishProgress(intervalId, data) {
+  clearInterval(intervalId);
+  const bar  = document.getElementById('scanProgressBar');
+  const pct  = document.getElementById('scanPct');
+  const text = document.getElementById('scanStatusText');
+
+  bar.style.width      = '100%';
+  bar.style.background = '#059669';
+  bar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+  pct.textContent      = '100%';
+  pct.style.color      = '#059669';
+
+  // Show real results in the status line
+  let summaryParts = [];
+  if (data && data.vt) {
+    const det = data.vt.detections || 0;
+    const tot = data.vt.total_engines || 0;
+    if (tot > 0) {
+      summaryParts.push(det === 0
+        ? `<span class="text-success"><i class="fa-solid fa-shield-check me-1"></i>VirusTotal: 0/${tot} engines — clean</span>`
+        : `<span class="text-danger"><i class="fa-solid fa-skull-crossbones me-1"></i>VirusTotal: ${det}/${tot} engines flagged</span>`);
+    }
+  }
+  if (data && data.gsb) {
+    const t = data.gsb.threat_type;
+    summaryParts.push(!t || t === 'clean'
+      ? '<span class="text-success"><i class="fa-brands fa-google me-1"></i>Google Safe Browsing: not blacklisted</span>'
+      : `<span class="text-danger"><i class="fa-solid fa-ban me-1"></i>GSB threat: ${t}</span>`);
+  }
+
+  text.innerHTML = summaryParts.length
+    ? summaryParts.join(' &nbsp;·&nbsp; ') + ' &nbsp;<strong class="text-success">— Scan complete</strong>'
+    : '<i class="fa-solid fa-circle-check me-1 text-success"></i><strong>Scan complete!</strong>';
+}
+
+// ── Scan handler ─────────────────────────────────────────
+async function doScan() {
+  const url = document.getElementById('urlInput').value.trim();
+  const errEl = document.getElementById('urlError');
+  errEl.style.display = 'none';
+
+  if (!url) { errEl.textContent = 'Please enter a URL.'; errEl.style.display = ''; return; }
+
+  // Show scanning state — button stays visible, spinner appears inside it
+  document.getElementById('scanSpinner').style.display = '';
+  document.getElementById('scanBtn').disabled = true;
+  document.getElementById('resultPanel').style.display = 'none';
+  const progressInterval = startProgress();
+
+  try {
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), 60000); // 60 s hard limit
+    let resp;
+    try {
+      resp = await fetch(SCAN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(tid);
+    }
+
+    const data = await resp.json();
+
+    if (!resp.ok || data.error) {
+      errEl.textContent = data.error || 'Scan failed. Please try again.';
+      errEl.style.display = '';
+      return;
+    }
+
+    // Populate UI
+    setGauge(data.score);
+    buildFeatureTable(data.features, data.feature_flags, data.feature_labels);
+    renderVT(data.vt);
+    renderGSB(data.gsb);
+    renderDomainAge(data.domain_age);
+    styleRecommendCard(data.risk_color);
+    document.getElementById('recommendText').textContent = data.recommendation;
+    renderExplanation(data.explanation, data.risk_color);
+
+    if (!data.model_available) {
+      document.getElementById('modelNote').style.display = '';
+    } else {
+      document.getElementById('modelNote').style.display = 'none';
+    }
+
+    finishProgress(progressInterval, data);
+    document.getElementById('urlInput').value = '';
+    document.getElementById('resultPanel').style.display = '';
+    document.getElementById('resultPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Instantly add the new scan to the history table below
+    addHistoryRow(data);
+
+  } catch (err) {
+    finishProgress(progressInterval, null);
+    document.getElementById('scanProgress').style.display = 'none';
+    errEl.textContent = err.name === 'AbortError'
+      ? 'Scan timed out. The server is taking too long — please try again.'
+      : 'Network error — please check your connection.';
+    errEl.style.display = '';
+  } finally {
+    document.getElementById('scanSpinner').style.display = 'none';
+    document.getElementById('scanBtn').disabled = false;
+  }
+}
+
+document.getElementById('scanBtn').addEventListener('click', doScan);
+document.getElementById('urlInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doScan();
+});
+document.getElementById('scanAgainBtn').addEventListener('click', () => {
+  document.getElementById('urlInput').value = '';
+  document.getElementById('urlInput').focus();
+  document.getElementById('resultPanel').style.display = 'none';
+});
+
+// ── History section: event delegation (works for existing + new rows) ──
+const histWhyModalEl = document.getElementById('histWhyModal');
+const histWhyModal   = histWhyModalEl ? new bootstrap.Modal(histWhyModalEl) : null;
+const histWhyBody    = document.getElementById('histWhyBody');
+const histTbody      = document.getElementById('histTbody');
+
+if (histTbody) {
+  histTbody.addEventListener('click', async e => {
+    const whyBtn    = e.target.closest('.hist-why-btn');
+    const deleteBtn = e.target.closest('.hist-delete-btn');
+
+    // Why? button
+    if (whyBtn && histWhyModal) {
+      const id = whyBtn.dataset.id;
+      document.getElementById('histWhyDetailLink').href = `/analyzer/scan/${id}`;
+      histWhyBody.innerHTML = `<div class="text-center py-4"><div class="spinner-border" style="color:var(--orange);" role="status"></div></div>`;
+      histWhyModal.show();
+      try {
+        const resp = await fetch(`/analyzer/scan/${id}/explanation`);
+        const data = await resp.json();
+        const expl = data.explanation || {};
+        const c    = data.risk_color || 'secondary';
+        let topFlags = '';
+        if (expl.triggered_flags && expl.triggered_flags.length) {
+          topFlags = '<ul class="list-group list-group-flush mt-3">' +
+            expl.triggered_flags.slice(0, 3).map(f => {
+              const sc = f.severity === 'high' ? 'danger' : f.severity === 'medium' ? 'warning' : 'secondary';
+              return `<li class="list-group-item px-0 py-2 border-0 border-bottom">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <span class="fw-semibold small">${f.feature}</span>
+                  <span class="badge bg-${sc} ms-auto">${f.severity.toUpperCase()}</span>
+                  <span class="font-monospace small text-muted">${f.value}</span>
+                </div>
+                <p class="mb-0 small text-muted">${f.explanation}</p></li>`;
+            }).join('') + '</ul>';
+        }
+        histWhyBody.innerHTML = `
+          <div class="alert alert-${c} border-0 mb-3">
+            <p class="small font-monospace mb-1 opacity-75">${data.url || ''}</p>
+            <p class="mb-0 fw-semibold">${expl.verdict_summary || 'No explanation available.'}</p>
+          </div>
+          ${expl.triggered_flags && expl.triggered_flags.length
+            ? `<h6 class="fw-bold text-danger small mb-0">Top Risk Flags</h6>${topFlags}`
+            : '<p class="text-success small"><i class="fa-solid fa-circle-check me-1"></i>No significant risk factors detected.</p>'}
+          ${expl.advice ? `<div class="alert alert-${c} border-0 mt-3 mb-0 small"><strong>Advice:</strong> ${expl.advice}</div>` : ''}`;
+      } catch (err) {
+        histWhyBody.innerHTML = '<p class="text-muted p-3">Could not load explanation.</p>';
+      }
+    }
+
+    // Delete button
+    if (deleteBtn) {
+      if (!confirm('Delete this scan record?')) return;
+      const id  = deleteBtn.dataset.id;
+      const row = deleteBtn.closest('tr');
+      try {
+        const resp = await fetch(`/analyzer/scan/${id}`, { method: 'DELETE' });
+        if (resp.ok) {
+          row.style.transition = 'opacity .3s';
+          row.style.opacity    = '0';
+          setTimeout(() => {
+            row.remove();
+            updateHistCount();
+          }, 320);
+        }
+      } catch (err) { alert('Could not delete scan.'); }
+    }
+  });
+}
+
+// ── Add a new row to the history table after a scan ──────
+function addHistoryRow(data) {
+  if (!histTbody) return;
+
+  // Remove empty-state row if present
+  const emptyRow = document.getElementById('histEmptyRow');
+  if (emptyRow) emptyRow.remove();
+
+  // Shorten URL for display
+  let shortUrl = data.url;
+  try {
+    const u = new URL(data.url);
+    shortUrl = u.hostname + u.pathname;
+  } catch (e) {}
+  if (shortUrl.length > 55) shortUrl = shortUrl.substring(0, 52) + '…';
+
+  const c       = data.risk_color;
+  const dotColor = c === 'danger' ? '#dc3545' : c === 'warning' ? '#fd7e14' : '#198754';
+  const icon     = c === 'danger' ? 'fa-skull-crossbones' : c === 'warning' ? 'fa-triangle-exclamation' : 'fa-circle-check';
+  const score    = Math.round(data.score);
+  const now      = new Date();
+  const dateStr  = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                 + ', ' + now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+  const tr = document.createElement('tr');
+  tr.className   = 'scan-hist-row';
+  tr.style.cssText = 'transition:background .15s,opacity .4s;';
+  tr.innerHTML = `
+    <td class="ps-4" style="max-width:280px;">
+      <div class="d-flex align-items-center gap-2">
+        <span class="rounded-circle flex-shrink-0"
+              style="width:8px;height:8px;background:${dotColor};display:inline-block;"></span>
+        <span class="small font-monospace text-truncate" title="${data.url}"
+              style="max-width:240px;">${shortUrl}</span>
+      </div>
+    </td>
+    <td>
+      <div class="d-flex align-items-center gap-2">
+        <div class="progress flex-grow-1" style="height:5px;max-width:80px;">
+          <div class="progress-bar bg-${c}" style="width:${score}%"></div>
+        </div>
+        <span class="fw-bold small text-${c}">${score}</span>
+      </div>
+    </td>
+    <td>
+      <span class="badge bg-${c} px-2 py-1">
+        <i class="fa-solid ${icon} me-1"></i>${data.label}
+      </span>
+    </td>
+    <td class="small text-muted text-nowrap">
+      <i class="fa-regular fa-clock me-1 opacity-50"></i>${dateStr}
+    </td>
+    <td class="pe-4 text-end">
+      <div class="d-flex gap-1 justify-content-end">
+        <button class="btn btn-sm btn-outline-primary hist-why-btn"
+                data-id="${data.scan_id}" title="Why this score?">
+          <i class="fa-solid fa-circle-question me-1"></i>Why?
+        </button>
+        <a href="/analyzer/scan/${data.scan_id}"
+           class="btn btn-sm btn-outline-secondary" title="Full details">
+          <i class="fa-solid fa-eye"></i>
+        </a>
+        <button class="btn btn-sm btn-outline-danger hist-delete-btn"
+                data-id="${data.scan_id}" title="Delete">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </div>
+    </td>`;
+
+  // Flash highlight on insert, then fade to normal
+  tr.style.background = 'rgba(255,107,53,0.12)';
+  histTbody.insertBefore(tr, histTbody.firstChild);
+  setTimeout(() => { tr.style.background = ''; }, 1800);
+
+  updateHistCount();
+
+  // Scroll history table into view smoothly
+  document.getElementById('histSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function updateHistCount() {
+  const countEl = document.getElementById('histCount');
+  if (!countEl || !histTbody) return;
+  const n = histTbody.querySelectorAll('tr.scan-hist-row').length;
+  countEl.textContent = `Showing last ${n} scan${n !== 1 ? 's' : ''}`;
+}
+</script>
+{% endblock %}

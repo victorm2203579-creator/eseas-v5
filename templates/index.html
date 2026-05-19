@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+
+{% block title %}ESEAS — Enhanced Social Engineering Attack Simulator{% endblock %}
+
+{% block content %}
+
+<!-- ===== HERO ===== -->
+<section class="hero text-center">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="mb-4">
+          <i class="fa-solid fa-shield-halved fa-4x" style="color:var(--orange)"></i>
+        </div>
+        <h1 class="display-4 fw-bold mb-3">
+          Enhanced Social Engineering<br/>
+          <span style="color:var(--orange)">Attack Simulator</span>
+        </h1>
+        <p class="lead mb-4 text-light opacity-75">
+          Detect phishing URLs with machine learning, simulate social engineering attacks,
+          and train users to recognise cyber threats — all in one platform.
+        </p>
+        <div class="d-flex flex-wrap gap-3 justify-content-center">
+          <a href="{{ url_for('auth.register') }}" class="btn btn-orange btn-lg px-5">
+            <i class="fa-solid fa-rocket me-2"></i>Get Started
+          </a>
+          <a href="#features" class="btn btn-outline-light btn-lg px-5">
+            <i class="fa-solid fa-circle-info me-2"></i>Learn More
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FEATURE CARDS ===== -->
+<section id="features" class="py-5 bg-white">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="fw-bold" style="color:var(--navy)">Platform Features</h2>
+      <p class="text-muted">Everything you need to understand, simulate, and defend against phishing attacks.</p>
+    </div>
+    <div class="row g-4">
+
+      <div class="col-md-6 col-lg-3">
+        <div class="card feature-card h-100 shadow-sm border-0 text-center p-4">
+          <div class="mb-3">
+            <i class="fa-solid fa-magnifying-glass fa-3x" style="color:var(--orange)"></i>
+          </div>
+          <h5 class="fw-bold" style="color:var(--navy)">Phishing Analyzer</h5>
+          <p class="text-muted small">
+            Submit any URL for real-time ML-powered analysis. Get a phishing probability
+            score, extracted features, and VirusTotal intelligence in seconds.
+          </p>
+          {% if current_user.is_authenticated %}
+            <a href="{{ url_for('analyzer.index') }}" class="btn btn-orange btn-sm mt-auto">
+              Scan a URL <i class="fa-solid fa-arrow-right ms-1"></i>
+            </a>
+          {% else %}
+            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary btn-sm mt-auto">
+              Login to Scan
+            </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-3">
+        <div class="card feature-card h-100 shadow-sm border-0 text-center p-4">
+          <div class="mb-3">
+            <i class="fa-solid fa-crosshairs fa-3x" style="color:var(--orange)"></i>
+          </div>
+          <h5 class="fw-bold" style="color:var(--navy)">Attack Simulator</h5>
+          <p class="text-muted small">
+            Launch controlled phishing simulations against target groups. Craft realistic
+            pretexts and measure user susceptibility with detailed campaign reports.
+          </p>
+          {% if current_user.is_authenticated and current_user.is_admin() %}
+            <a href="{{ url_for('simulator.index') }}" class="btn btn-orange btn-sm mt-auto">
+              Launch Campaign <i class="fa-solid fa-arrow-right ms-1"></i>
+            </a>
+          {% else %}
+            <span class="badge bg-secondary mt-auto py-2 px-3">Admin Only</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-3">
+        <div class="card feature-card h-100 shadow-sm border-0 text-center p-4">
+          <div class="mb-3">
+            <i class="fa-solid fa-graduation-cap fa-3x" style="color:var(--orange)"></i>
+          </div>
+          <h5 class="fw-bold" style="color:var(--navy)">Awareness Training</h5>
+          <p class="text-muted small">
+            Interactive modules that teach users to spot phishing attempts, social
+            engineering tactics, and credential harvesting techniques.
+          </p>
+          {% if current_user.is_authenticated %}
+            <a href="{{ url_for('training.index') }}" class="btn btn-orange btn-sm mt-auto">
+              Start Training <i class="fa-solid fa-arrow-right ms-1"></i>
+            </a>
+          {% else %}
+            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary btn-sm mt-auto">
+              Login to Learn
+            </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-3">
+        <div class="card feature-card h-100 shadow-sm border-0 text-center p-4">
+          <div class="mb-3">
+            <i class="fa-solid fa-chart-bar fa-3x" style="color:var(--orange)"></i>
+          </div>
+          <h5 class="fw-bold" style="color:var(--navy)">Analytics Dashboard</h5>
+          <p class="text-muted small">
+            Visualise scan history, campaign outcomes, and training completion rates.
+            Export PDF reports for stakeholders and audit trails.
+          </p>
+          {% if current_user.is_authenticated %}
+            <a href="{{ url_for('dashboard.index') }}" class="btn btn-orange btn-sm mt-auto">
+              View Dashboard <i class="fa-solid fa-arrow-right ms-1"></i>
+            </a>
+          {% else %}
+            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary btn-sm mt-auto">
+              Login to View
+            </a>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== HOW IT WORKS ===== -->
+<section id="how-it-works" class="py-5" style="background:#f1f4f8;">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="fw-bold" style="color:var(--navy)">How It Works</h2>
+      <p class="text-muted">Analysing a suspicious URL takes three simple steps.</p>
+    </div>
+    <div class="row g-4 justify-content-center">
+
+      <div class="col-md-4 text-center">
+        <div class="step-circle mx-auto mb-3">1</div>
+        <i class="fa-solid fa-link fa-2x mb-3" style="color:var(--orange)"></i>
+        <h5 class="fw-bold" style="color:var(--navy)">Submit a URL</h5>
+        <p class="text-muted small">
+          Paste any suspicious link into the URL Scanner. The system accepts
+          full URLs, shortened links, and bare domains.
+        </p>
+      </div>
+
+      <div class="col-md-4 text-center">
+        <div class="step-circle mx-auto mb-3">2</div>
+        <i class="fa-solid fa-robot fa-2x mb-3" style="color:var(--orange)"></i>
+        <h5 class="fw-bold" style="color:var(--navy)">AI Analysis</h5>
+        <p class="text-muted small">
+          A trained RandomForest model extracts 15 URL features and calculates
+          a phishing probability score, cross-checked with VirusTotal and
+          Google Safe Browsing.
+        </p>
+      </div>
+
+      <div class="col-md-4 text-center">
+        <div class="step-circle mx-auto mb-3">3</div>
+        <i class="fa-solid fa-file-lines fa-2x mb-3" style="color:var(--orange)"></i>
+        <h5 class="fw-bold" style="color:var(--navy)">Get Your Report</h5>
+        <p class="text-muted small">
+          Receive a detailed verdict with feature breakdown, risk level,
+          and recommendations. Download a PDF report for documentation.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== STATS BAR ===== -->
+<section class="stats-bar text-center">
+  <div class="container">
+    <div class="row g-4 justify-content-center">
+
+      <div class="col-6 col-md-4">
+        <div class="stat-number" data-target="10000">0</div>
+        <div class="text-white-50 small mt-1">
+          <i class="fa-solid fa-link me-1"></i>URLs Analysed
+        </div>
+      </div>
+
+      <div class="col-6 col-md-4">
+        <div class="stat-number" data-target="500">0</div>
+        <div class="text-white-50 small mt-1">
+          <i class="fa-solid fa-crosshairs me-1"></i>Simulations Run
+        </div>
+      </div>
+
+      <div class="col-6 col-md-4">
+        <div class="stat-number" data-target="95">0</div>
+        <div class="text-white-50 small mt-1">
+          <i class="fa-solid fa-bullseye me-1"></i>% Detection Accuracy
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+{% endblock %}

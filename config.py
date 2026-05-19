@@ -3,8 +3,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Railway sets RAILWAY_ENVIRONMENT when running on their platform
+# Detect hosted environment (Railway or Render)
 _ON_RAILWAY = bool(os.getenv('RAILWAY_ENVIRONMENT') or os.getenv('RAILWAY_PROJECT_ID'))
+_ON_RENDER  = bool(os.getenv('RENDER'))
 
 
 class DevelopmentConfig:
@@ -25,6 +26,7 @@ class DevelopmentConfig:
     MAIL_USE_TLS  = True
     MAIL_USE_SSL  = False
     MAIL_DEFAULT_SENDER = os.getenv('MAIL_USERNAME')
+    MAIL_TIMEOUT  = 10  # fail fast if SMTP unreachable
 
     WTF_CSRF_ENABLED = True
 
@@ -37,5 +39,5 @@ class DevelopmentConfig:
 
     BASE_URL = os.getenv('BASE_URL', 'http://127.0.0.1:5000')
 
-    # Debug off on Railway, on locally
-    DEBUG = not _ON_RAILWAY
+    # Debug off on hosted platforms, on locally
+    DEBUG = not (_ON_RAILWAY or _ON_RENDER)

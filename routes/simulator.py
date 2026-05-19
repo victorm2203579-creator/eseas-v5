@@ -1,10 +1,11 @@
 import csv
 import io
+import threading
 import uuid
 from datetime import datetime, timezone
 
 from flask import (Blueprint, render_template, request, redirect,
-                   url_for, jsonify, flash, Response, abort)
+                   url_for, jsonify, flash, Response, abort, current_app)
 from flask_login import login_required, current_user
 
 from models import db, User
@@ -99,9 +100,13 @@ def new_campaign():
         flash(f'Campaign "{name}" created with {len(target_user_ids)} target(s).', 'success')
 
         if schedule_type == 'launch':
-            _do_launch(campaign)
+            campaign.status = 'active'
+            campaign.launched_at = datetime.now(timezone.utc)
             db.session.commit()
-            flash('Campaign launched — emails marked as sent.', 'success')
+            app = current_app._get_current_object()
+            t = threading.Thread(target=_do_launch_bg, args=(app, campaign.id), daemon=True)
+            t.start()
+            flash('Campaign launched — emails are being sent in the background.', 'success')
 
         return redirect(url_for('simulator.campaign_detail', id=campaign.id))
 
@@ -134,9 +139,30 @@ def launch_campaign(id):
     if campaign.status not in ('draft', 'scheduled'):
         return jsonify({'error': 'Campaign already launched.'}), 400
 
-    _do_launch(campaign)
+    campaign.status = 'active'
+    campaign.launched_at = datetime.now(timezone.utc)
     db.session.commit()
-    return jsonify({'ok': True, 'sent': campaign.emails_sent})
+    app = current_app._get_current_object()
+    threading.Thread(target=_do_launch_bg, args=(app, campaign.id), daemon=True).start()
+    return jsonify({'ok': True, 'sent': 0, 'message': 'Emails sending in background'})
+
+
+def _do_launch_bg(app, campaign_id):
+    """Send campaign emails in a background thread (non-blocking)."""
+    from routes.email_service import send_campaign_email
+    with app.app_context():
+        from models.simulator import Campaign, CampaignTarget
+        from models import db
+        campaign = Campaign.query.get(campaign_id)
+        if not campaign:
+            return
+        for target in campaign.targets.filter_by(email_sent=False).all():
+            try:
+                send_campaign_email(target, campaign)
+            except Exception:
+                pass
+        campaign.emails_sent = campaign.targets.filter_by(email_sent=True).count()
+        db.session.commit()
 
 
 def _do_launch(campaign):

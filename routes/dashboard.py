@@ -11,6 +11,7 @@ from models import (
     Notification,
 )
 from routes.decorators import admin_required
+from extensions import limiter
 
 # ---------------------------------------------------------------------------
 # Blueprint: dashboard  (existing — personal scan dashboard)
@@ -169,6 +170,7 @@ def _compute_overview():
 @api_stats.route('/stats/overview')
 @login_required
 @admin_required
+@limiter.limit('60 per minute')  # Threat 10: Rate limit API stats routes
 def stats_overview():
     return jsonify(_compute_overview())
 
@@ -176,6 +178,7 @@ def stats_overview():
 @api_stats.route('/stats/scans-over-time')
 @login_required
 @admin_required
+@limiter.limit('60 per minute')  # Threat 10: Rate limit API stats routes
 def scans_over_time():
     today  = datetime.now(timezone.utc).date()
     days   = [(today - timedelta(days=i)) for i in range(29, -1, -1)]
@@ -195,6 +198,7 @@ def scans_over_time():
 @api_stats.route('/stats/risk-distribution')
 @login_required
 @admin_required
+@limiter.limit('60 per minute')  # Threat 10: Rate limit API stats routes
 def risk_distribution():
     safe       = ScanResult.query.filter_by(final_label='Safe').count()
     suspicious = ScanResult.query.filter_by(final_label='Suspicious').count()
@@ -205,6 +209,7 @@ def risk_distribution():
 @api_stats.route('/stats/attack-types')
 @login_required
 @admin_required
+@limiter.limit('60 per minute')  # Threat 10: Rate limit API stats routes
 def attack_types():
     rows = (
         db.session.query(Campaign.attack_type, func.count(Campaign.id))
@@ -217,6 +222,7 @@ def attack_types():
 @api_stats.route('/stats/training-completion')
 @login_required
 @admin_required
+@limiter.limit('60 per minute')  # Threat 10: Rate limit API stats routes
 def training_completion():
     modules     = (TrainingModule.query.filter_by(is_active=True)
                    .order_by(TrainingModule.order_index).all())
@@ -239,6 +245,7 @@ def training_completion():
 @api_stats.route('/stats/campaign-performance')
 @login_required
 @admin_required
+@limiter.limit('60 per minute')  # Threat 10: Rate limit API stats routes
 def campaign_performance():
     campaigns = Campaign.query.order_by(Campaign.created_at.desc()).limit(8).all()
     return jsonify([{
@@ -252,6 +259,7 @@ def campaign_performance():
 @api_stats.route('/stats/user-risk-ranking')
 @login_required
 @admin_required
+@limiter.limit('60 per minute')  # Threat 10: Rate limit API stats routes
 def user_risk_ranking():
     users = (User.query.filter_by(is_active=True)
              .order_by(User.risk_score.desc()).limit(10).all())
@@ -282,6 +290,7 @@ def user_risk_ranking():
 @api_stats.route('/stats/recent-activity')
 @login_required
 @admin_required
+@limiter.limit('60 per minute')  # Threat 10: Rate limit API stats routes
 def recent_activity():
     events = []
 
@@ -397,6 +406,7 @@ def recent_activity():
 
 @api_stats.route('/my-stats')
 @login_required
+@limiter.limit('60 per minute')  # Threat 10: Rate limit API stats routes
 def my_stats():
     uid = current_user.id
 
@@ -424,6 +434,7 @@ def my_stats():
 
 @api_stats.route('/my-scans-chart')
 @login_required
+@limiter.limit('60 per minute')  # Threat 10: Rate limit API stats routes
 def my_scans_chart():
     uid    = current_user.id
     today  = datetime.now(timezone.utc).date()
@@ -493,6 +504,7 @@ def user_dashboard():
 
 @api_stats.route('/notifications')
 @login_required
+@limiter.limit('120 per minute')  # Threat 10: Higher limit for frequent polling
 def get_notifications():
     notifs = (Notification.query
               .filter_by(user_id=current_user.id)
@@ -503,6 +515,7 @@ def get_notifications():
 
 @api_stats.route('/notifications/<int:nid>/read', methods=['POST'])
 @login_required
+@limiter.limit('120 per minute')  # Threat 10: Higher limit for frequent polling
 def mark_notification_read(nid):
     n = Notification.query.filter_by(id=nid, user_id=current_user.id).first()
     if n:
@@ -513,6 +526,7 @@ def mark_notification_read(nid):
 
 @api_stats.route('/notifications/read-all', methods=['POST'])
 @login_required
+@limiter.limit('120 per minute')  # Threat 10: Higher limit for frequent polling
 def mark_all_notifications_read():
     Notification.query.filter_by(user_id=current_user.id, is_read=False).update({'is_read': True})
     db.session.commit()

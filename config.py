@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+from datetime import timedelta
 
 load_dotenv()
 
@@ -29,6 +30,15 @@ class DevelopmentConfig:
     MAIL_TIMEOUT  = 10  # fail fast if SMTP unreachable
 
     WTF_CSRF_ENABLED = True
+
+    # Session security (Threat 7)
+    SESSION_COOKIE_SECURE = False        # True in production with HTTPS
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'     # Lax not Strict — allows redirect-based login
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=2)
+    SESSION_COOKIE_NAME = 'eseas_session'
+    REMEMBER_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_SECURE = False       # True in production with HTTPS
 
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB
 

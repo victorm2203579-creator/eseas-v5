@@ -11,6 +11,7 @@ from flask_login import login_required, current_user
 from models import db, User
 from models.simulator import AttackTemplate, Campaign, CampaignTarget
 from routes.decorators import admin_required
+from security.input_sanitizer import sanitize_string, sanitize_rich_text, ValidationError
 
 simulator = Blueprint('simulator', __name__, url_prefix='/simulator')
 tracking  = Blueprint('tracking',  __name__, url_prefix='/track')
@@ -70,6 +71,16 @@ def new_campaign():
         template_id     = request.form.get('template_id', type=int)
         target_user_ids = request.form.getlist('target_users')
         schedule_type   = request.form.get('schedule_type', 'draft')
+
+        # ── Input validation ──────────────────────────────────────────
+        try:
+            name = sanitize_string(name, max_length=200)
+            description = sanitize_string(description, max_length=1000)
+        except ValidationError as e:
+            flash(f'Invalid input: {str(e)}', 'danger')
+            return render_template('simulator/new_campaign.html',
+                                   templates=templates, users=users,
+                                   attack_types=ATTACK_TYPES)
 
         if not name or not attack_type:
             flash('Campaign name and attack type are required.', 'danger')
@@ -285,6 +296,19 @@ def new_template():
         description      = request.form.get('description', '').strip()
         difficulty_level = int(request.form.get('difficulty_level', 3))
 
+        # ── Input validation ──────────────────────────────────────────
+        try:
+            name = sanitize_string(name, max_length=200)
+            subject = sanitize_string(subject, max_length=200)
+            preview_text = sanitize_string(preview_text, max_length=500)
+            description = sanitize_string(description, max_length=1000)
+            body_html = sanitize_rich_text(body_html)  # Allow limited HTML for email body
+        except ValidationError as e:
+            flash(f'Invalid input: {str(e)}', 'danger')
+            return render_template('simulator/new_template.html',
+                                   attack_types=ATTACK_TYPES,
+                                   fake_pages=_FAKE_PAGES)
+
         if not name or not attack_type or not subject or not body_html:
             flash('Name, attack type, subject and email body are required.', 'danger')
             return render_template('simulator/template_form.html',
@@ -312,14 +336,33 @@ def edit_template(tid):
     tmpl = AttackTemplate.query.get_or_404(tid)
 
     if request.method == 'POST':
-        tmpl.name             = request.form.get('name', tmpl.name).strip()
+        # ── Input validation for template edits ─────────────────────
+        new_name = request.form.get('name', tmpl.name).strip()
+        new_subject = request.form.get('subject', tmpl.subject).strip()
+        new_preview = request.form.get('preview_text', '').strip()
+        new_body = request.form.get('body_html', tmpl.body_html)
+        new_page_type = request.form.get('fake_page_type', tmpl.fake_page_type)
+        new_description = request.form.get('description', '').strip()
+        new_difficulty = int(request.form.get('difficulty_level', tmpl.difficulty_level))
+
+        try:
+            new_name = sanitize_string(new_name, max_length=200)
+            new_subject = sanitize_string(new_subject, max_length=200)
+            new_preview = sanitize_string(new_preview, max_length=500)
+            new_description = sanitize_string(new_description, max_length=1000)
+            new_body = sanitize_rich_text(new_body)
+        except ValidationError as e:
+            flash(f'Invalid input: {str(e)}', 'danger')
+            return redirect(url_for('simulator.edit_template', id=tmpl.id))
+
+        tmpl.name             = new_name
         tmpl.attack_type      = request.form.get('attack_type', tmpl.attack_type)
-        tmpl.subject          = request.form.get('subject', tmpl.subject).strip()
-        tmpl.preview_text     = request.form.get('preview_text', '').strip()
-        tmpl.body_html        = request.form.get('body_html', tmpl.body_html)
-        tmpl.fake_page_type   = request.form.get('fake_page_type', tmpl.fake_page_type)
-        tmpl.description      = request.form.get('description', '').strip()
-        tmpl.difficulty_level = int(request.form.get('difficulty_level', tmpl.difficulty_level))
+        tmpl.subject          = new_subject
+        tmpl.preview_text     = new_preview
+        tmpl.body_html        = new_body
+        tmpl.fake_page_type   = new_page_type
+        tmpl.description      = new_description
+        tmpl.difficulty_level = new_difficulty
         db.session.commit()
         flash('Template updated.', 'success')
         return redirect(url_for('simulator.templates'))

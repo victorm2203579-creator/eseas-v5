@@ -625,6 +625,779 @@ TEMPLATES = [
 </body></html>
 """,
     },
+    # ── 10 NEW HARDER TEMPLATES ──────────────────────────────────────────────
+
+    {
+        'name': 'Google: Critical Security Alert — Sign-in Blocked',
+        'attack_type': 'phishing_email',
+        'subject': 'Critical security alert — sign-in attempt blocked on your Google Account',
+        'preview_text': 'A new sign-in on Windows was blocked. Review this activity now.',
+        'description': 'Google security alert impersonation — exact copy of real Google security emails with correct branding.',
+        'difficulty_level': 4,
+        'fake_page_type': 'it_login',
+        'body_html': """
+<html>
+<body style="margin:0;padding:0;background:#f1f3f4;font-family:Roboto,Arial,sans-serif;">
+<table width="100%" bgcolor="#f1f3f4" cellpadding="0" cellspacing="0">
+<tr><td align="center" style="padding:30px 10px;">
+<table width="600" bgcolor="#ffffff" cellpadding="0" cellspacing="0" style="border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.15);">
+
+  <!-- Header -->
+  <tr><td style="padding:24px 30px;border-bottom:1px solid #e8eaed;">
+    <span style="font-size:22px;font-weight:400;color:#202124;">
+      <span style="color:#4285f4;">G</span><span style="color:#ea4335;">o</span><span style="color:#fbbc05;">o</span><span style="color:#4285f4;">g</span><span style="color:#34a853;">l</span><span style="color:#ea4335;">e</span>
+    </span>
+  </td></tr>
+
+  <!-- Body -->
+  <tr><td style="padding:32px 30px;">
+    <div style="width:48px;height:48px;background:#fce8e6;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;">
+      <span style="font-size:24px;">⚠️</span>
+    </div>
+    <h2 style="margin:0 0 8px;font-size:20px;font-weight:400;color:#202124;">Critical security alert</h2>
+    <p style="margin:0 0 20px;font-size:14px;color:#5f6368;">for {{user_email}}</p>
+
+    <div style="border:1px solid #e8eaed;border-radius:8px;padding:16px;margin:0 0 24px;">
+      <p style="margin:0 0 8px;font-size:14px;color:#202124;font-weight:500;">A new sign-in on Windows</p>
+      <p style="margin:0 0 4px;font-size:13px;color:#5f6368;">📍 Lagos, Nigeria &nbsp;·&nbsp; {{date}}</p>
+      <p style="margin:0;font-size:13px;color:#ea4335;font-weight:500;">⛔ Sign-in was blocked</p>
+    </div>
+
+    <p style="margin:0 0 16px;font-size:14px;color:#202124;line-height:1.6;">
+      Someone just used your password to try to sign in to your account from a non-Google app.
+      Google blocked them, but you should <strong>review your account activity</strong> to confirm it was not you.
+    </p>
+    <p style="margin:0 0 24px;font-size:14px;color:#202124;line-height:1.6;">
+      If you do not recognise this sign-in, you should <strong>change your password immediately</strong>
+      to secure your account.
+    </p>
+
+    <table cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+      <tr>
+        <td style="padding-right:12px;">
+          <a href="{{tracking_link}}" style="display:inline-block;background:#1a73e8;color:#fff;
+             padding:10px 24px;text-decoration:none;border-radius:4px;font-size:14px;font-weight:500;">
+            Check activity
+          </a>
+        </td>
+        <td>
+          <a href="{{tracking_link}}" style="display:inline-block;background:#fff;color:#1a73e8;
+             padding:10px 24px;text-decoration:none;border-radius:4px;font-size:14px;font-weight:500;
+             border:1px solid #dadce0;">
+            Change password
+          </a>
+        </td>
+      </tr>
+    </table>
+
+    <p style="font-size:12px;color:#5f6368;line-height:1.6;margin:0 0 8px;">
+      You received this email to let you know about important changes to your Google Account and services.<br/>
+      © 2024 Google LLC, 1600 Amphitheatre Parkway, Mountain View, CA 94043
+    </p>
+    <p style="font-size:12px;margin:0;">
+      <a href="{{report_link}}" style="color:#1a73e8;">Report phishing</a>
+    </p>
+  </td></tr>
+
+</table></td></tr>
+</table>
+</body></html>
+""",
+    },
+
+    {
+        'name': 'GTBank: BVN Verification — Account Restriction Notice',
+        'attack_type': 'phishing_email',
+        'subject': 'IMPORTANT: Verify your BVN to avoid account restriction — GTBank',
+        'preview_text': 'Your account will be restricted within 24 hours unless you complete BVN verification.',
+        'description': 'GTBank impersonation demanding BVN verification to avoid account suspension.',
+        'difficulty_level': 3,
+        'fake_page_type': 'bank_login',
+        'body_html': """
+<html>
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,Helvetica,sans-serif;">
+<table width="100%" bgcolor="#f5f5f5" cellpadding="0" cellspacing="0">
+<tr><td align="center" style="padding:30px 10px;">
+<table width="600" bgcolor="#ffffff" cellpadding="0" cellspacing="0" style="border-radius:4px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.1);">
+
+  <!-- Header -->
+  <tr><td bgcolor="#e30613" style="padding:0;">
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="padding:18px 30px;">
+          <span style="font-size:26px;font-weight:900;color:#ffffff;letter-spacing:2px;">GTBank</span>
+        </td>
+        <td align="right" style="padding:18px 30px;">
+          <span style="font-size:11px;color:rgba(255,255,255,.8);">Guaranty Trust Bank Plc</span>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+
+  <!-- Orange urgency bar -->
+  <tr><td bgcolor="#ff6600" style="padding:10px 30px;color:#fff;font-size:13px;font-weight:bold;">
+    ⚠️ ACTION REQUIRED: BVN Verification Pending
+  </td></tr>
+
+  <!-- Body -->
+  <tr><td style="padding:30px;">
+    <p style="font-size:15px;color:#333;margin:0 0 16px;font-weight:bold;">Dear {{user_name}},</p>
+    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 14px;">
+      Following the Central Bank of Nigeria (CBN) directive on customer data verification,
+      we are required to validate the Bank Verification Number (BVN) linked to your GTBank account.
+    </p>
+    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 14px;">
+      Our records indicate that your BVN verification is <strong style="color:#e30613;">incomplete</strong>.
+      Failure to complete verification by <strong>{{date}}</strong> will result in:
+    </p>
+    <div style="background:#fff5f5;border:1px solid #ffcccc;border-radius:4px;padding:16px;margin:16px 0;">
+      <ul style="margin:0;padding-left:18px;font-size:13px;color:#555;line-height:2;">
+        <li>Restriction of all debit card transactions</li>
+        <li>Suspension of internet and mobile banking</li>
+        <li>Freeze on all inward/outward transfers</li>
+      </ul>
+    </div>
+    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 20px;">
+      Click the button below to verify your BVN securely and avoid any disruption to your banking services.
+    </p>
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin:20px 0;">
+      <tr><td align="center">
+        <a href="{{tracking_link}}" style="display:inline-block;background:#e30613;color:#fff;
+           padding:14px 44px;text-decoration:none;border-radius:3px;font-weight:bold;font-size:15px;
+           letter-spacing:.5px;">
+          Verify My BVN Now
+        </a>
+      </td></tr>
+    </table>
+    <div style="border-top:1px solid #eee;padding-top:16px;margin-top:8px;">
+      <p style="font-size:12px;color:#999;margin:0 0 4px;">
+        GTBank Customer Care: 0700-482-6268 &bull; Email: gtconnect@gtbank.com
+      </p>
+      <p style="font-size:11px;color:#bbb;margin:0;">
+        Guaranty Trust Bank Plc &bull; Plot 635, Akin Adesola St, Victoria Island, Lagos &bull;
+        Sent to {{user_email}}<br/>
+        <a href="{{report_link}}" style="color:#bbb;">Report phishing</a>
+      </p>
+    </div>
+  </td></tr>
+
+</table></td></tr>
+</table>
+</body></html>
+""",
+    },
+
+    {
+        'name': 'JAMB: Admission Status Update — Login Required',
+        'attack_type': 'phishing_email',
+        'subject': 'JAMB CAPS: Your admission status has been updated — login to view',
+        'preview_text': 'Your 2024 UTME admission status has been updated. Log in to JAMB CAPS to view.',
+        'description': 'JAMB CAPS admission portal impersonation targeting Nigerian students checking admission status.',
+        'difficulty_level': 3,
+        'fake_page_type': 'it_login',
+        'body_html': """
+<html>
+<body style="margin:0;padding:0;background:#f0f4f8;font-family:Arial,Helvetica,sans-serif;">
+<table width="100%" bgcolor="#f0f4f8" cellpadding="0" cellspacing="0">
+<tr><td align="center" style="padding:30px 10px;">
+<table width="600" bgcolor="#ffffff" cellpadding="0" cellspacing="0" style="border-radius:6px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.1);">
+
+  <!-- Header -->
+  <tr><td bgcolor="#006633" style="padding:0;">
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="padding:18px 30px;">
+          <p style="margin:0;font-size:16px;font-weight:bold;color:#fff;">JAMB</p>
+          <p style="margin:2px 0 0;font-size:11px;color:#90ee90;">Joint Admissions and Matriculation Board</p>
+        </td>
+        <td align="right" style="padding:18px 30px;">
+          <span style="font-size:11px;color:rgba(255,255,255,.7);">Federal Republic of Nigeria</span>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+
+  <!-- Status banner -->
+  <tr><td bgcolor="#ffd700" style="padding:12px 30px;">
+    <p style="margin:0;font-size:13px;font-weight:bold;color:#333;">
+      📋 CAPS NOTIFICATION — Admission Status Update
+    </p>
+  </td></tr>
+
+  <!-- Body -->
+  <tr><td style="padding:30px;">
+    <p style="font-size:14px;color:#333;margin:0 0 14px;">Dear {{user_name}},</p>
+    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 14px;">
+      We write to inform you that your <strong>2024 UTME/DE Admission Status</strong> on the
+      Central Admissions Processing System (CAPS) has been <strong>updated</strong>.
+    </p>
+    <div style="border:2px solid #006633;border-radius:6px;padding:20px;margin:16px 0;text-align:center;">
+      <p style="margin:0 0 8px;font-size:13px;color:#555;">Registration Number</p>
+      <p style="margin:0 0 12px;font-size:20px;font-weight:bold;color:#006633;letter-spacing:2px;">
+        23{{user_email}}4NG
+      </p>
+      <p style="margin:0;font-size:13px;color:#e65c00;font-weight:bold;">
+        ⚠ Status Update Available — Login Required to View
+      </p>
+    </div>
+    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 14px;">
+      To view your complete admission status, accept/reject your admission offer, or print your
+      admission letter, please log in to your JAMB profile immediately.
+    </p>
+    <p style="font-size:13px;color:#e65c00;margin:0 0 20px;">
+      <strong>Note:</strong> Unclaimed admission offers are automatically withdrawn after <strong>{{date}}</strong>.
+    </p>
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin:20px 0;">
+      <tr><td align="center">
+        <a href="{{tracking_link}}" style="display:inline-block;background:#006633;color:#fff;
+           padding:14px 40px;text-decoration:none;border-radius:4px;font-weight:bold;font-size:14px;">
+          Login to JAMB CAPS Portal
+        </a>
+      </td></tr>
+    </table>
+    <p style="font-size:12px;color:#aaa;margin:0;">
+      JAMB Headquarters &bull; Bwari, Abuja, Nigeria &bull; support@jamb.gov.ng<br/>
+      Sent to {{user_email}} &bull; <a href="{{report_link}}" style="color:#aaa;">Report phishing</a>
+    </p>
+  </td></tr>
+
+</table></td></tr>
+</table>
+</body></html>
+""",
+    },
+
+    {
+        'name': 'WhatsApp: Your Account Has Been Suspended',
+        'attack_type': 'phishing_email',
+        'subject': 'Your WhatsApp account has been suspended — appeal within 24 hours',
+        'preview_text': 'Your WhatsApp account was suspended for violating our Terms of Service.',
+        'description': 'WhatsApp account suspension notice with an appeal link that harvests credentials.',
+        'difficulty_level': 3,
+        'fake_page_type': 'it_login',
+        'body_html': """
+<html>
+<body style="margin:0;padding:0;background:#f0f2f5;font-family:-apple-system,Helvetica,Arial,sans-serif;">
+<table width="100%" bgcolor="#f0f2f5" cellpadding="0" cellspacing="0">
+<tr><td align="center" style="padding:30px 10px;">
+<table width="600" bgcolor="#ffffff" cellpadding="0" cellspacing="0" style="border-radius:8px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.1);">
+
+  <!-- Header -->
+  <tr><td bgcolor="#25d366" style="padding:22px 30px;text-align:center;">
+    <div style="width:52px;height:52px;background:#ffffff;border-radius:50%;display:inline-block;line-height:52px;font-size:28px;margin-bottom:8px;">💬</div>
+    <p style="margin:0;font-size:20px;font-weight:700;color:#ffffff;">WhatsApp</p>
+  </td></tr>
+
+  <!-- Red alert -->
+  <tr><td bgcolor="#dc3545" style="padding:12px 30px;text-align:center;color:#fff;font-size:13px;font-weight:bold;">
+    🚫 Account Suspended — Immediate Action Required
+  </td></tr>
+
+  <!-- Body -->
+  <tr><td style="padding:32px 30px;">
+    <p style="font-size:15px;color:#1c1e21;margin:0 0 16px;font-weight:600;">Dear {{user_name}},</p>
+    <p style="font-size:14px;color:#4b4f56;line-height:1.7;margin:0 0 14px;">
+      Your WhatsApp account linked to <strong>{{user_email}}</strong> has been
+      <strong style="color:#dc3545;">temporarily suspended</strong> due to a violation of our
+      Terms of Service. Specifically:
+    </p>
+    <div style="background:#fff5f5;border-left:4px solid #dc3545;padding:14px 16px;margin:16px 0;border-radius:0 6px 6px 0;">
+      <p style="margin:0 0 6px;font-size:13px;color:#721c24;font-weight:600;">Reason for suspension:</p>
+      <p style="margin:0;font-size:13px;color:#555;">Suspected automated messaging activity detected on your account (Section 7.2 of WhatsApp Terms of Service).</p>
+    </div>
+    <p style="font-size:14px;color:#4b4f56;line-height:1.7;margin:0 0 14px;">
+      If you believe this is a mistake, you can appeal this decision within
+      <strong>24 hours</strong>. After this period, your account and all associated
+      message history will be <strong>permanently deleted</strong>.
+    </p>
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin:24px 0;">
+      <tr><td align="center">
+        <a href="{{tracking_link}}" style="display:inline-block;background:#25d366;color:#fff;
+           padding:14px 44px;text-decoration:none;border-radius:24px;font-weight:700;font-size:15px;">
+          Appeal Suspension
+        </a>
+      </td></tr>
+    </table>
+    <p style="font-size:12px;color:#90949c;margin:0;text-align:center;">
+      WhatsApp LLC &bull; 1601 Willow Road, Menlo Park, CA 94025<br/>
+      <a href="{{report_link}}" style="color:#90949c;">Report phishing</a>
+    </p>
+  </td></tr>
+
+</table></td></tr>
+</table>
+</body></html>
+""",
+    },
+
+    {
+        'name': 'UBA: Unusual Transaction Alert — Verify Immediately',
+        'attack_type': 'phishing_email',
+        'subject': 'UBA Alert: Unusual transaction of ₦185,000 — verify now to stop it',
+        'preview_text': 'A transaction of ₦185,000 was initiated on your UBA account. Not you? Stop it now.',
+        'description': 'UBA bank transaction alert impersonation with a fake verification link to stop a large transfer.',
+        'difficulty_level': 4,
+        'fake_page_type': 'bank_login',
+        'body_html': """
+<html>
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,Helvetica,sans-serif;">
+<table width="100%" bgcolor="#f5f5f5" cellpadding="0" cellspacing="0">
+<tr><td align="center" style="padding:30px 10px;">
+<table width="600" bgcolor="#ffffff" cellpadding="0" cellspacing="0" style="border-radius:4px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.1);">
+
+  <!-- Header -->
+  <tr><td bgcolor="#e60026" style="padding:18px 30px;">
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td>
+          <span style="font-size:24px;font-weight:900;color:#ffffff;letter-spacing:1px;">UBA</span>
+          <span style="font-size:11px;color:rgba(255,255,255,.8);margin-left:8px;">United Bank for Africa</span>
+        </td>
+        <td align="right">
+          <span style="font-size:11px;color:rgba(255,255,255,.7);">Transaction Alert</span>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+
+  <!-- Alert -->
+  <tr><td bgcolor="#1a1a1a" style="padding:12px 30px;">
+    <p style="margin:0;font-size:13px;color:#ff4444;font-weight:bold;">
+      ⚡ HIGH VALUE TRANSACTION ALERT
+    </p>
+  </td></tr>
+
+  <!-- Body -->
+  <tr><td style="padding:30px;">
+    <p style="font-size:14px;color:#333;margin:0 0 16px;">Dear {{user_name}},</p>
+    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 14px;">
+      A <strong>debit transaction</strong> has been initiated on your UBA account.
+      If you did not authorise this transaction, click <strong>"Stop Transaction"</strong>
+      immediately to reverse it before it is processed.
+    </p>
+
+    <div style="border:2px solid #e60026;border-radius:6px;overflow:hidden;margin:20px 0;">
+      <div style="background:#e60026;padding:10px 16px;">
+        <p style="margin:0;font-size:13px;font-weight:bold;color:#fff;">Transaction Details</p>
+      </div>
+      <table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;">
+        <tr style="background:#fff9f9;"><td style="padding:10px 16px;color:#555;border-bottom:1px solid #f0e0e0;"><strong>Amount</strong></td><td style="padding:10px 16px;color:#e60026;font-weight:bold;font-size:15px;border-bottom:1px solid #f0e0e0;">₦185,000.00</td></tr>
+        <tr><td style="padding:10px 16px;color:#555;border-bottom:1px solid #f0e0e0;"><strong>Beneficiary</strong></td><td style="padding:10px 16px;color:#333;border-bottom:1px solid #f0e0e0;">OKEKE CHUKWUEMEKA</td></tr>
+        <tr style="background:#fff9f9;"><td style="padding:10px 16px;color:#555;border-bottom:1px solid #f0e0e0;"><strong>Bank</strong></td><td style="padding:10px 16px;color:#333;border-bottom:1px solid #f0e0e0;">Zenith Bank</td></tr>
+        <tr><td style="padding:10px 16px;color:#555;border-bottom:1px solid #f0e0e0;"><strong>Date/Time</strong></td><td style="padding:10px 16px;color:#333;border-bottom:1px solid #f0e0e0;">{{date}}, 02:17 AM</td></tr>
+        <tr style="background:#fff9f9;"><td style="padding:10px 16px;color:#555;"><strong>Status</strong></td><td style="padding:10px 16px;color:#ff6600;font-weight:bold;">Processing — Not Yet Sent</td></tr>
+      </table>
+    </div>
+
+    <p style="font-size:14px;color:#555;margin:0 0 20px;line-height:1.6;">
+      You have <strong style="color:#e60026;">10 minutes</strong> to stop this transaction before it
+      is completed and funds leave your account permanently.
+    </p>
+    <table cellpadding="0" cellspacing="0" width="100%">
+      <tr>
+        <td align="center" style="padding-right:8px;">
+          <a href="{{tracking_link}}" style="display:inline-block;background:#e60026;color:#fff;
+             padding:13px 32px;text-decoration:none;border-radius:3px;font-weight:bold;font-size:14px;">
+            Stop Transaction
+          </a>
+        </td>
+        <td align="center" style="padding-left:8px;">
+          <a href="{{tracking_link}}" style="display:inline-block;background:#fff;color:#e60026;
+             padding:13px 32px;text-decoration:none;border-radius:3px;font-weight:bold;font-size:14px;
+             border:2px solid #e60026;">
+            It Was Me
+          </a>
+        </td>
+      </tr>
+    </table>
+    <p style="font-size:11px;color:#bbb;margin:20px 0 0;">
+      UBA Nigeria &bull; UBA House, 57 Marina, Lagos &bull; Sent to {{user_email}}<br/>
+      <a href="{{report_link}}" style="color:#bbb;">Report phishing</a>
+    </p>
+  </td></tr>
+
+</table></td></tr>
+</table>
+</body></html>
+""",
+    },
+
+    {
+        'name': 'Netflix: Payment Failed — Update Billing Details',
+        'attack_type': 'phishing_email',
+        'subject': 'Your Netflix membership is on hold — update payment to keep watching',
+        'preview_text': 'We had trouble processing your last payment. Update your billing info to continue.',
+        'description': 'Netflix billing failure impersonation targeting active subscribers to harvest payment details.',
+        'difficulty_level': 3,
+        'fake_page_type': 'bank_login',
+        'body_html': """
+<html>
+<body style="margin:0;padding:0;background:#000000;font-family:Arial,Helvetica,sans-serif;">
+<table width="100%" bgcolor="#000000" cellpadding="0" cellspacing="0">
+<tr><td align="center" style="padding:30px 10px;">
+<table width="600" bgcolor="#141414" cellpadding="0" cellspacing="0" style="border-radius:4px;overflow:hidden;">
+
+  <!-- Header -->
+  <tr><td bgcolor="#000000" style="padding:22px 30px;border-bottom:1px solid #333;">
+    <span style="font-size:28px;font-weight:900;color:#e50914;letter-spacing:-1px;">NETFLIX</span>
+  </td></tr>
+
+  <!-- Body -->
+  <tr><td style="padding:36px 30px;">
+    <h2 style="margin:0 0 16px;font-size:22px;color:#ffffff;font-weight:400;">
+      Your membership is on hold
+    </h2>
+    <p style="font-size:14px;color:#b3b3b3;line-height:1.7;margin:0 0 20px;">
+      Hi {{user_name}},
+    </p>
+    <p style="font-size:14px;color:#b3b3b3;line-height:1.7;margin:0 0 20px;">
+      We're having trouble with your current billing information. To keep your Netflix membership
+      and continue enjoying all your favourite shows and movies, please update your payment details.
+    </p>
+
+    <div style="background:#1f1f1f;border:1px solid #333;border-radius:4px;padding:20px;margin:20px 0;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;color:#b3b3b3;">
+        <tr><td style="padding:6px 0;"><strong style="color:#fff;">Plan:</strong></td><td>Standard with Ads</td></tr>
+        <tr><td style="padding:6px 0;"><strong style="color:#fff;">Amount Due:</strong></td><td style="color:#e50914;font-weight:bold;">₦4,200 / month</td></tr>
+        <tr><td style="padding:6px 0;"><strong style="color:#fff;">Payment Failed:</strong></td><td>{{date}}</td></tr>
+        <tr><td style="padding:6px 0;"><strong style="color:#fff;">Account:</strong></td><td>{{user_email}}</td></tr>
+      </table>
+    </div>
+
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin:28px 0;">
+      <tr><td align="center">
+        <a href="{{tracking_link}}" style="display:inline-block;background:#e50914;color:#fff;
+           padding:16px 48px;text-decoration:none;border-radius:4px;font-weight:bold;font-size:15px;">
+          Update Payment Info
+        </a>
+      </td></tr>
+    </table>
+
+    <p style="font-size:13px;color:#666;line-height:1.6;margin:0 0 16px;">
+      If we don't receive your payment within <strong style="color:#fff;">7 days</strong>,
+      your account will be cancelled and you will lose access to all your profiles, viewing history
+      and personalised recommendations.
+    </p>
+
+    <hr style="border:none;border-top:1px solid #333;margin:24px 0;"/>
+    <p style="font-size:11px;color:#666;margin:0;">
+      Netflix International &bull; 100 Winchester Circle, Los Gatos, CA 95032<br/>
+      This email was sent to {{user_email}}<br/>
+      <a href="{{report_link}}" style="color:#666;">Report phishing</a>
+    </p>
+  </td></tr>
+
+</table></td></tr>
+</table>
+</body></html>
+""",
+    },
+
+    {
+        'name': 'NIMC: NIN Verification Expiry Notice',
+        'attack_type': 'phishing_email',
+        'subject': 'NIMC Notice: Your NIN profile requires re-verification before {{date}}',
+        'preview_text': 'Your National Identification Number profile is incomplete. Verify now to avoid deactivation.',
+        'description': 'Nigerian NIMC impersonation requiring NIN re-verification — highly targeted at Nigerians.',
+        'difficulty_level': 3,
+        'fake_page_type': 'it_login',
+        'body_html': """
+<html>
+<body style="margin:0;padding:0;background:#eef2f7;font-family:Arial,Helvetica,sans-serif;">
+<table width="100%" bgcolor="#eef2f7" cellpadding="0" cellspacing="0">
+<tr><td align="center" style="padding:30px 10px;">
+<table width="600" bgcolor="#ffffff" cellpadding="0" cellspacing="0" style="border-radius:6px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.1);">
+
+  <!-- Header -->
+  <tr><td bgcolor="#006400" style="padding:0;">
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="padding:16px 30px;">
+          <p style="margin:0;font-size:15px;font-weight:bold;color:#fff;">NIMC</p>
+          <p style="margin:2px 0 0;font-size:11px;color:#90ee90;">National Identity Management Commission</p>
+          <p style="margin:1px 0 0;font-size:10px;color:rgba(255,255,255,.6);">Federal Republic of Nigeria</p>
+        </td>
+        <td align="right" style="padding:16px 30px;">
+          <div style="background:rgba(255,255,255,.15);border-radius:4px;padding:6px 12px;">
+            <p style="margin:0;font-size:10px;color:#fff;">Official Communication</p>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+
+  <!-- Alert bar -->
+  <tr><td bgcolor="#cc7700" style="padding:10px 30px;color:#fff;font-size:13px;font-weight:bold;">
+    📋 NIN Profile Re-Verification Required
+  </td></tr>
+
+  <!-- Body -->
+  <tr><td style="padding:30px;">
+    <p style="font-size:14px;color:#333;margin:0 0 14px;">Dear {{user_name}},</p>
+    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 14px;">
+      Following the National Identity Management Commission (NIMC) Circular No. NIMC/ICT/2024/07,
+      all NIN holders are required to update and verify their biometric profiles on the
+      <strong>NIMC Self-Service Portal</strong> as part of the national database upgrade exercise.
+    </p>
+    <div style="background:#f9f9f9;border:1px solid #ddd;border-radius:4px;padding:16px;margin:16px 0;">
+      <p style="margin:0 0 8px;font-size:13px;color:#333;font-weight:bold;">Your NIN Profile Status</p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;">
+        <tr><td style="padding:4px 0;color:#555;">Account Email:</td><td style="color:#333;">{{user_email}}</td></tr>
+        <tr><td style="padding:4px 0;color:#555;">Verification Status:</td><td style="color:#cc7700;font-weight:bold;">⚠ Pending Update</td></tr>
+        <tr><td style="padding:4px 0;color:#555;">Deadline:</td><td style="color:#cc0000;font-weight:bold;">{{date}}</td></tr>
+      </table>
+    </div>
+    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 14px;">
+      Failure to complete re-verification by the deadline may result in your NIN being
+      <strong>temporarily deactivated</strong>, which could affect SIM card registration,
+      bank account operations, and access to government services.
+    </p>
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin:20px 0;">
+      <tr><td align="center">
+        <a href="{{tracking_link}}" style="display:inline-block;background:#006400;color:#fff;
+           padding:14px 40px;text-decoration:none;border-radius:4px;font-weight:bold;font-size:14px;">
+          Verify My NIN Profile
+        </a>
+      </td></tr>
+    </table>
+    <p style="font-size:12px;color:#aaa;margin:0;">
+      NIMC Headquarters &bull; No. 4 Zinguinchor Street, Wuse Zone 5, Abuja &bull; info@nimc.gov.ng<br/>
+      Sent to {{user_email}} &bull; <a href="{{report_link}}" style="color:#aaa;">Report phishing</a>
+    </p>
+  </td></tr>
+
+</table></td></tr>
+</table>
+</body></html>
+""",
+    },
+
+    {
+        'name': 'LinkedIn: You Appeared in 14 Searches — Recruiter Message',
+        'attack_type': 'spear_phishing',
+        'subject': 'You appeared in 14 searches this week — a recruiter left you a message',
+        'preview_text': 'Sarah Mitchell from Deloitte Nigeria viewed your profile and sent you a job opportunity.',
+        'description': 'LinkedIn recruiter impersonation with a high-paying job offer to harvest credentials.',
+        'difficulty_level': 4,
+        'fake_page_type': 'it_login',
+        'body_html': """
+<html>
+<body style="margin:0;padding:0;background:#f3f2ef;font-family:-apple-system,Helvetica,Arial,sans-serif;">
+<table width="100%" bgcolor="#f3f2ef" cellpadding="0" cellspacing="0">
+<tr><td align="center" style="padding:30px 10px;">
+<table width="600" bgcolor="#ffffff" cellpadding="0" cellspacing="0" style="border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.1);">
+
+  <!-- Header -->
+  <tr><td bgcolor="#0a66c2" style="padding:20px 30px;">
+    <span style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-.5px;">in</span>
+    <span style="font-size:16px;font-weight:400;color:#ffffff;margin-left:8px;">LinkedIn</span>
+  </td></tr>
+
+  <!-- Body -->
+  <tr><td style="padding:30px;">
+    <p style="font-size:15px;color:#191919;margin:0 0 4px;font-weight:600;">Hi {{user_name}},</p>
+    <p style="font-size:13px;color:#666;margin:0 0 24px;">Your profile is getting noticed.</p>
+
+    <!-- Search stat -->
+    <div style="background:#eef3fb;border-radius:8px;padding:20px;margin:0 0 24px;text-align:center;">
+      <p style="margin:0 0 4px;font-size:32px;font-weight:700;color:#0a66c2;">14</p>
+      <p style="margin:0;font-size:13px;color:#555;">people searched for you this week</p>
+    </div>
+
+    <!-- Recruiter message -->
+    <div style="border:1px solid #e0e0e0;border-radius:8px;padding:20px;margin:0 0 24px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td width="48" valign="top" style="padding-right:14px;">
+            <div style="width:48px;height:48px;background:#0a66c2;border-radius:50%;text-align:center;line-height:48px;font-size:18px;color:#fff;font-weight:bold;">S</div>
+          </td>
+          <td valign="top">
+            <p style="margin:0 0 2px;font-size:14px;font-weight:600;color:#191919;">Sarah Mitchell</p>
+            <p style="margin:0 0 2px;font-size:13px;color:#555;">Senior Talent Acquisition, Deloitte Nigeria</p>
+            <p style="margin:0 0 12px;font-size:12px;color:#888;">2nd connection · 2 hours ago</p>
+            <div style="background:#f9f9f9;border-radius:6px;padding:14px;border:1px solid #eee;">
+              <p style="margin:0;font-size:13px;color:#333;line-height:1.6;">
+                "Hi {{user_name}}, I came across your profile and I'm impressed with your background.
+                We have an urgent opening for a <strong>Cybersecurity Analyst</strong> role at Deloitte Nigeria —
+                ₦8.5M annual package + benefits. I'd love to share the full JD with you. Are you open to a quick chat?"
+              </p>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 24px;">
+      <tr>
+        <td align="center" style="padding-right:8px;">
+          <a href="{{tracking_link}}" style="display:inline-block;background:#0a66c2;color:#fff;
+             padding:12px 28px;text-decoration:none;border-radius:24px;font-weight:600;font-size:14px;">
+            Reply to Sarah
+          </a>
+        </td>
+        <td align="center" style="padding-left:8px;">
+          <a href="{{tracking_link}}" style="display:inline-block;background:#fff;color:#0a66c2;
+             padding:12px 28px;text-decoration:none;border-radius:24px;font-weight:600;font-size:14px;
+             border:1.5px solid #0a66c2;">
+            View Full Profile
+          </a>
+        </td>
+      </tr>
+    </table>
+
+    <hr style="border:none;border-top:1px solid #e0e0e0;margin:20px 0;"/>
+    <p style="font-size:11px;color:#999;margin:0;text-align:center;">
+      This email was intended for {{user_name}} ({{user_email}})<br/>
+      LinkedIn Corporation, 1000 West Maude Avenue, Sunnyvale, CA 94085<br/>
+      <a href="{{report_link}}" style="color:#999;">Unsubscribe · Report phishing</a>
+    </p>
+  </td></tr>
+
+</table></td></tr>
+</table>
+</body></html>
+""",
+    },
+
+    {
+        'name': 'MTN: Free 50GB Data — Loyalty Reward',
+        'attack_type': 'prize_lure',
+        'subject': '🎁 MTN is giving you FREE 50GB data — claim before midnight tonight',
+        'preview_text': 'You have been selected as an MTN loyalty customer. Claim your 50GB free data now.',
+        'description': 'MTN free data loyalty reward lure — extremely effective against Nigerian mobile users.',
+        'difficulty_level': 2,
+        'fake_page_type': 'prize_claim',
+        'body_html': """
+<html>
+<body style="margin:0;padding:0;background:#fff200;font-family:Arial,Helvetica,sans-serif;">
+<table width="100%" bgcolor="#fff200" cellpadding="0" cellspacing="0">
+<tr><td align="center" style="padding:30px 10px;">
+<table width="600" bgcolor="#ffffff" cellpadding="0" cellspacing="0" style="border-radius:10px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.15);">
+
+  <!-- Header -->
+  <tr><td bgcolor="#fff200" style="padding:30px;text-align:center;">
+    <div style="display:inline-block;background:#0057a8;border-radius:50%;width:70px;height:70px;line-height:70px;text-align:center;font-size:28px;margin-bottom:12px;">📡</div>
+    <h1 style="margin:0 0 4px;font-size:28px;font-weight:900;color:#0057a8;letter-spacing:1px;">MTN</h1>
+    <p style="margin:0;font-size:13px;color:#555;font-weight:bold;">EVERYWHERE YOU GO</p>
+  </td></tr>
+
+  <!-- Body -->
+  <tr><td style="padding:32px 30px;text-align:center;">
+    <p style="font-size:16px;color:#333;font-weight:bold;margin:0 0 8px;">🎉 Congratulations, {{user_name}}!</p>
+    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 20px;">
+      You have been selected as one of our <strong>Top 500 Loyalty Customers</strong> for
+      May 2024. As a special thank-you for being a valued MTN customer, we are rewarding you with:
+    </p>
+
+    <div style="background:linear-gradient(135deg,#0057a8,#0099cc);border-radius:10px;padding:28px;margin:20px 0;">
+      <p style="margin:0 0 4px;font-size:48px;font-weight:900;color:#fff200;">50GB</p>
+      <p style="margin:0 0 8px;font-size:18px;color:#ffffff;font-weight:bold;">FREE DATA</p>
+      <p style="margin:0;font-size:13px;color:rgba(255,255,255,.8);">Valid for 30 days · No strings attached</p>
+    </div>
+
+    <div style="background:#fffde7;border:2px dashed #ffc107;border-radius:8px;padding:16px;margin:20px 0;text-align:left;">
+      <p style="margin:0 0 6px;font-size:13px;color:#333;font-weight:bold;">⏳ Offer expires:</p>
+      <p style="margin:0 0 4px;font-size:15px;color:#cc0000;font-weight:bold;">{{date}} — 11:59 PM</p>
+      <p style="margin:0;font-size:12px;color:#888;">Unclaimed rewards expire and cannot be reissued.</p>
+    </div>
+
+    <a href="{{tracking_link}}" style="display:inline-block;background:#0057a8;color:#fff200;
+       padding:16px 52px;text-decoration:none;border-radius:8px;font-weight:900;font-size:17px;
+       letter-spacing:.5px;margin:8px 0 24px;">
+      CLAIM MY 50GB NOW
+    </a>
+
+    <p style="font-size:13px;color:#999;margin:0 0 4px;">
+      Simply log in with your MTN account to activate your reward.
+    </p>
+    <p style="font-size:11px;color:#ccc;margin:0;">
+      MTN Nigeria Communications Plc &bull; MTN Plaza, Falomo, Ikoyi, Lagos<br/>
+      Sent to {{user_email}} &bull; <a href="{{report_link}}" style="color:#ccc;">Report suspicious email</a>
+    </p>
+  </td></tr>
+
+</table></td></tr>
+</table>
+</body></html>
+""",
+    },
+
+    {
+        'name': 'IT Support: VPN Access Expiring — Re-authenticate Now',
+        'attack_type': 'it_support',
+        'subject': '[IT Security] VPN certificate expiring in 2 hours — re-authenticate to maintain access',
+        'preview_text': 'Your remote access VPN certificate expires tonight. Re-authenticate to avoid lockout.',
+        'description': 'IT/VPN certificate expiry notice targeting remote workers — extremely convincing for corporate targets.',
+        'difficulty_level': 4,
+        'fake_page_type': 'it_login',
+        'body_html': """
+<html>
+<body style="margin:0;padding:0;background:#0d1117;font-family:'Segoe UI',Arial,sans-serif;">
+<table width="100%" bgcolor="#0d1117" cellpadding="0" cellspacing="0">
+<tr><td align="center" style="padding:30px 10px;">
+<table width="600" bgcolor="#161b22" cellpadding="0" cellspacing="0" style="border-radius:6px;overflow:hidden;border:1px solid #30363d;">
+
+  <!-- Header -->
+  <tr><td bgcolor="#161b22" style="padding:20px 30px;border-bottom:1px solid #30363d;">
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td>
+          <span style="font-size:14px;font-weight:600;color:#58a6ff;">🔒 IT Security Operations</span><br/>
+          <span style="font-size:12px;color:#8b949e;">Automated Security Certificate Alert</span>
+        </td>
+        <td align="right">
+          <span style="background:#da3633;color:#fff;font-size:11px;padding:4px 10px;border-radius:12px;font-weight:600;">URGENT</span>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+
+  <!-- Body -->
+  <tr><td style="padding:28px 30px;">
+    <p style="font-size:14px;color:#c9d1d9;margin:0 0 16px;">Hi {{user_name}},</p>
+
+    <div style="background:#1c2128;border:1px solid #da3633;border-radius:6px;padding:16px;margin:0 0 20px;">
+      <p style="margin:0 0 6px;font-size:13px;color:#da3633;font-weight:600;">⚠ Certificate Expiry Warning</p>
+      <p style="margin:0;font-size:13px;color:#8b949e;line-height:1.6;">
+        Your <strong style="color:#c9d1d9;">GlobalProtect VPN certificate</strong> is scheduled to expire in
+        <strong style="color:#f0883e;">2 hours 14 minutes</strong>. After expiry, you will be unable to
+        connect to the corporate network remotely until manual IT re-provisioning (24-48 hours).
+      </p>
+    </div>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#1c2128;border:1px solid #30363d;border-radius:6px;margin:0 0 20px;font-size:12px;color:#8b949e;">
+      <tr style="border-bottom:1px solid #30363d;"><td style="padding:10px 16px;">Certificate CN</td><td style="padding:10px 16px;color:#c9d1d9;font-family:monospace;">CORP-VPN-USER-{{user_email}}</td></tr>
+      <tr style="border-bottom:1px solid #30363d;"><td style="padding:10px 16px;">Expiry</td><td style="padding:10px 16px;color:#f0883e;font-family:monospace;">{{date}} 23:59:59 UTC</td></tr>
+      <tr style="border-bottom:1px solid #30363d;"><td style="padding:10px 16px;">Issuer</td><td style="padding:10px 16px;color:#c9d1d9;font-family:monospace;">Corporate-CA-Root-G3</td></tr>
+      <tr><td style="padding:10px 16px;">Action Required</td><td style="padding:10px 16px;color:#3fb950;font-family:monospace;">Re-authenticate</td></tr>
+    </table>
+
+    <p style="font-size:14px;color:#c9d1d9;line-height:1.6;margin:0 0 24px;">
+      To renew your certificate automatically, click the button below and re-authenticate with
+      your corporate credentials. This takes under 60 seconds and requires no IT involvement.
+    </p>
+
+    <table cellpadding="0" cellspacing="0" width="100%">
+      <tr><td align="center">
+        <a href="{{tracking_link}}" style="display:inline-block;background:#238636;color:#ffffff;
+           padding:12px 32px;text-decoration:none;border-radius:6px;font-weight:600;font-size:14px;
+           border:1px solid #2ea043;">
+          Re-authenticate VPN Certificate
+        </a>
+      </td></tr>
+    </table>
+
+    <p style="font-size:12px;color:#484f58;margin:24px 0 0;">
+      IT Security Operations &bull; Do not reply to this automated message<br/>
+      Sent to {{user_email}} &bull; <a href="{{report_link}}" style="color:#484f58;">Report phishing</a>
+    </p>
+  </td></tr>
+
+</table></td></tr>
+</table>
+</body></html>
+""",
+    },
 ]
 
 

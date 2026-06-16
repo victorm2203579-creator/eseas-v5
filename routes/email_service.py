@@ -5,6 +5,11 @@ from flask import url_for, current_app
 from flask_mail import Message
 
 from extensions import mail
+from security.email_guard import (
+    sanitize_email_header,
+    sanitize_email_html_value,
+    validate_recipient_email,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -41,16 +46,21 @@ def _replace_placeholders(text: str, target, campaign) -> str:
     tracking_url = f"{base}/track/{target.tracking_token}"
     report_url   = f"{base}/track/{target.tracking_token}/report"
 
+    # Threat 9: Sanitize user-supplied values to prevent email header injection and XSS
+    sanitized_user_name = sanitize_email_html_value(target.user.name)
+    sanitized_user_email = sanitize_email_html_value(target.user.email)
+    sanitized_campaign_name = sanitize_email_html_value(campaign.name)
+
     subs = {
-        '{{user_name}}':     target.user.name,
-        '{{user_email}}':    target.user.email,
+        '{{user_name}}':     sanitized_user_name,
+        '{{user_email}}':    sanitized_user_email,
         '{{tracking_link}}': tracking_url,
         '{{report_link}}':   report_url,
         '{{company_name}}':  'FUT Minna IT Department',
         '{{date}}':          datetime.now().strftime('%d %B %Y'),
-        '{{campaign_name}}': campaign.name,
-        '{user_name}':       target.user.name,
-        '{user_email}':      target.user.email,
+        '{{campaign_name}}': sanitized_campaign_name,
+        '{user_name}':       sanitized_user_name,
+        '{user_email}':      sanitized_user_email,
         '{tracking_link}':   tracking_url,
         '{report_link}':     report_url,
         '{date}':            datetime.now().strftime('%d %B %Y'),
@@ -63,10 +73,13 @@ def _replace_placeholders(text: str, target, campaign) -> str:
 def _generic_body(target, campaign) -> str:
     base = current_app.config.get('BASE_URL', 'http://127.0.0.1:5000').rstrip('/')
     tracking_url = f"{base}/track/{target.tracking_token}"
+    # Threat 9: Sanitize user-supplied values for email body
+    sanitized_user_name = sanitize_email_html_value(target.user.name)
+    sanitized_user_email = sanitize_email_html_value(target.user.email)
     return f"""
 <html>
 <body style="font-family:Arial,sans-serif;color:#333;max-width:600px;margin:auto;padding:20px;">
-  <p>Dear {target.user.name},</p>
+  <p>Dear {sanitized_user_name},</p>
   <p>This is an important notice from FUT Minna IT Services.
      Please verify your account details to avoid suspension.</p>
   <p style="text-align:center;margin:30px 0;">
@@ -78,7 +91,7 @@ def _generic_body(target, campaign) -> str:
   </p>
   <p style="color:#666;font-size:0.85em;">
     FUT Minna Information Technology Services<br>
-    This email was sent to {target.user.email}
+    This email was sent to {sanitized_user_email}
   </p>
 </body>
 </html>

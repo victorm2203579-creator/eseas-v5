@@ -13,6 +13,9 @@ from models.user import User
 from models.notification import NotificationService
 from routes.decorators import admin_required
 from routes.badge_service import BadgeService
+from security.input_sanitizer import sanitize_string, sanitize_rich_text, sanitize_url, ValidationError
+from extensions import limiter
+from security.concurrency_guard import prevent_concurrent
 
 training       = Blueprint('training',       __name__, url_prefix='/training')
 training_admin = Blueprint('training_admin', __name__, url_prefix='/admin')
@@ -128,9 +131,14 @@ def quiz(mid):
 
 @training.route('/module/<int:mid>/quiz/submit', methods=['POST'])
 @login_required
+@limiter.limit('30 per minute; 200 per hour')  # Threat 10: Rate limit quiz submissions
+@prevent_concurrent('quiz_submit')  # Threat 13: Prevent duplicate concurrent submissions
 def submit_quiz(mid):
     module   = TrainingModule.query.filter_by(id=mid, is_active=True).first_or_404()
-    progress = _get_progress(current_user.id, mid)
+    # Threat 13: Row-level lock to prevent concurrent quiz submissions for same module
+    progress = UserProgress.query.filter_by(
+        user_id=current_user.id, module_id=mid
+    ).with_for_update().first()
 
     if not progress:
         return jsonify({'error': 'Please visit the lesson first.'}), 400
@@ -489,19 +497,33 @@ def new_module():
     if request.method == 'POST':
         title     = request.form.get('title', '').strip()
         topic     = request.form.get('topic', '')
+
+        # ── Input validation ──────────────────────────────────────────
+        try:
+            title = sanitize_string(title, max_length=200)
+            description = sanitize_string(request.form.get('description', ''), max_length=1000)
+            video_url = request.form.get('video_url', '').strip()
+            if video_url:
+                video_url = sanitize_url(video_url)
+            content_html = sanitize_rich_text(request.form.get('content_html', ''))
+            icon_class = sanitize_string(request.form.get('icon_class', 'fa-book'), max_length=50)
+        except ValidationError as e:
+            flash(f'Invalid input: {str(e)}', 'danger')
+            return redirect(url_for('training_admin.new_module'))
+
         if not title or not topic:
             flash('Title and topic are required.', 'danger')
             return redirect(url_for('training_admin.new_module'))
 
         module = TrainingModule(
-            title=request.form.get('title', '').strip(),
-            description=request.form.get('description', '').strip(),
+            title=title,
+            description=description,
             topic=topic,
-            content_html=request.form.get('content_html', ''),
-            video_url=request.form.get('video_url', '').strip() or None,
+            content_html=content_html,
+            video_url=video_url or None,
             order_index=int(request.form.get('order_index', 99)),
             estimated_minutes=int(request.form.get('estimated_minutes', 10)),
-            icon_class=request.form.get('icon_class', 'fa-book').strip(),
+            icon_class=icon_class,
         )
         db.session.add(module)
         db.session.commit()
@@ -520,14 +542,27 @@ def edit_module(mid):
     module = TrainingModule.query.get_or_404(mid)
 
     if request.method == 'POST':
-        module.title             = request.form.get('title', module.title).strip()
-        module.description       = request.form.get('description', '').strip()
+        # ── Input validation ──────────────────────────────────────────
+        try:
+            new_title = sanitize_string(request.form.get('title', module.title), max_length=200)
+            new_description = sanitize_string(request.form.get('description', ''), max_length=1000)
+            new_video_url = request.form.get('video_url', '').strip()
+            if new_video_url:
+                new_video_url = sanitize_url(new_video_url)
+            new_content = sanitize_rich_text(request.form.get('content_html', module.content_html))
+            new_icon = sanitize_string(request.form.get('icon_class', module.icon_class), max_length=50)
+        except ValidationError as e:
+            flash(f'Invalid input: {str(e)}', 'danger')
+            return redirect(url_for('training_admin.edit_module', mid=mid))
+
+        module.title             = new_title
+        module.description       = new_description
         module.topic             = request.form.get('topic', module.topic)
-        module.content_html      = request.form.get('content_html', module.content_html)
-        module.video_url         = request.form.get('video_url', '').strip() or None
+        module.content_html      = new_content
+        module.video_url         = new_video_url or None
         module.order_index       = int(request.form.get('order_index', module.order_index))
         module.estimated_minutes = int(request.form.get('estimated_minutes', module.estimated_minutes))
-        module.icon_class        = request.form.get('icon_class', module.icon_class).strip()
+        module.icon_class        = new_icon
         module.is_active         = 'is_active' in request.form
         db.session.commit()
         flash('Module updated.', 'success')

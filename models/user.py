@@ -24,6 +24,16 @@ class User(UserMixin, db.Model):
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     risk_score = db.Column(db.Float, default=0.0, nullable=False)  # 0–100
 
+    # Account lockout (brute-force protection)
+    failed_login_attempts = db.Column(db.Integer, default=0, nullable=False)
+    locked_until = db.Column(db.DateTime, nullable=True)
+
+    # Privilege tracking (primary admin, promotion/demotion audit)
+    is_primary_admin = db.Column(db.Boolean, default=False, nullable=False)
+    promoted_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    promoted_at = db.Column(db.DateTime, nullable=True)
+    demoted_at = db.Column(db.DateTime, nullable=True)
+
     sessions = db.relationship('UserSession', backref='user', lazy='dynamic',
                                cascade='all, delete-orphan')
 

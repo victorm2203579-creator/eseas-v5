@@ -86,5 +86,35 @@ class ScanResult(db.Model):
                 pass
         return {}
 
+    @property
+    def accuracy(self) -> int:
+        """Estimate analysis confidence (%) from stored signal columns."""
+        acc = 38
+        # VT signal
+        if self.vt_total_engines and self.vt_total_engines > 0:
+            acc += 7
+            det = self.vt_detections or 0
+            if det >= 10:   acc += 12
+            elif det >= 5:  acc += 9
+            elif det >= 2:  acc += 6
+            elif det >= 1:  acc += 4
+        # GSB signal
+        if self.gsb_threat_type is not None:
+            acc += 8 if self.gsb_threat_type not in ('clean', '') else 5
+        # ML agreement
+        if self.ml_score is not None:
+            ml = self.ml_score
+            verdict_high = self.final_score >= 60
+            ml_high = ml >= 60
+            acc += 8 if (verdict_high == ml_high) else 3
+        # Feature data richness
+        feat_count = len(self.features)
+        if feat_count >= 10:  acc += 8
+        elif feat_count >= 5: acc += 4
+        # Domain age available
+        if self.domain_age is not None and self.domain_age > 0:
+            acc += 4
+        return min(97, max(40, int(acc)))
+
     def __repr__(self):
         return f'<ScanResult id={self.id} score={self.final_score} label={self.final_label!r}>'

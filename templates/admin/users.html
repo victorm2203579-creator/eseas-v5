@@ -47,6 +47,13 @@
 
     <!-- Users table -->
     <div class="card border-0 shadow-sm">
+      <style>
+        .badge-primary-admin {
+          background: var(--navy) !important;
+          color: #fff;
+          font-size: .75rem;
+        }
+      </style>
       <div class="card-body p-0">
         <div class="table-responsive">
           <table class="table table-hover align-middle mb-0" id="usersTable">
@@ -82,7 +89,11 @@
 
                 <!-- Role -->
                 <td>
-                  {% if u.role == 'admin' %}
+                  {% if u.is_primary_admin %}
+                    <span class="badge badge-primary-admin">
+                      <i class="fa-solid fa-crown me-1"></i>Primary Admin
+                    </span>
+                  {% elif u.role == 'admin' %}
                     <span class="badge badge-admin">
                       <i class="fa-solid fa-user-shield me-1"></i>Admin
                     </span>
@@ -145,8 +156,8 @@
                       <i class="fa-solid fa-eye"></i>
                     </a>
 
-                    <!-- Toggle active (not self) -->
-                    {% if u.id != current_user.id %}
+                    <!-- Toggle active (not self, not primary admin) -->
+                    {% if u.id != current_user.id and not u.is_primary_admin %}
                     <form method="POST"
                           action="{{ url_for('admin_bp.toggle_user', user_id=u.id) }}"
                           class="d-inline">
@@ -159,20 +170,36 @@
                       </button>
                     </form>
 
-                    <!-- Change role -->
-                    <form method="POST"
-                          action="{{ url_for('admin_bp.change_role', user_id=u.id) }}"
-                          class="d-inline">
-                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                      <input type="hidden" name="role"
-                             value="{{ 'user' if u.role == 'admin' else 'admin' }}" />
-                      <button type="submit"
-                              class="btn btn-sm btn-outline-warning"
-                              title="Make {{ 'User' if u.role == 'admin' else 'Admin' }}"
-                              onclick="return confirm('Change {{ u.name }} to {{ 'user' if u.role == 'admin' else 'admin' }} role?')">
-                        <i class="fa-solid {{ 'fa-arrow-down-from-line' if u.role == 'admin' else 'fa-arrow-up-from-line' }}"></i>
-                      </button>
-                    </form>
+                    <!-- Promote/Revoke admin (only primary admin can do this) -->
+                    {% if current_user.is_primary_admin and not u.is_primary_admin %}
+                      {% if u.role == 'admin' %}
+                      <!-- Revoke admin privileges -->
+                      <form method="POST"
+                            action="{{ url_for('admin_bp.revoke_admin', user_id=u.id) }}"
+                            class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <button type="submit"
+                                class="btn btn-sm btn-danger"
+                                title="Revoke Admin"
+                                onclick="return confirm('Revoke admin privileges from {{ u.name }}?')">
+                          <i class="fa-solid fa-user-minus me-1"></i>Revoke
+                        </button>
+                      </form>
+                      {% else %}
+                      <!-- Promote to admin -->
+                      <form method="POST"
+                            action="{{ url_for('admin_bp.promote_admin', user_id=u.id) }}"
+                            class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <button type="submit"
+                                class="btn btn-sm btn-outline-warning"
+                                title="Promote to Admin"
+                                onclick="return confirm('Promote {{ u.name }} to admin?')">
+                          <i class="fa-solid fa-shield-halved"></i>
+                        </button>
+                      </form>
+                      {% endif %}
+                    {% endif %}
                     {% else %}
                     <span class="text-muted small">(you)</span>
                     {% endif %}
@@ -193,6 +220,57 @@
         </div>
       </div>
     </div>
+
+    <!-- Privilege Change History (only for primary admin) -->
+    {% if current_user.is_primary_admin and privilege_changes %}
+    <div class="card border-0 shadow-sm mt-4">
+      <div class="card-header" style="background: var(--navy); color: #fff;">
+        <h5 class="mb-0">
+          <i class="fa-solid fa-clock-rotate-left me-2"></i>Privilege Change History
+        </h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead style="background: #f8f9fa;">
+              <tr>
+                <th class="ps-4">User</th>
+                <th>Action</th>
+                <th>Changed By</th>
+                <th>Date</th>
+                <th class="pe-4">Reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for change in privilege_changes %}
+              <tr>
+                <td class="ps-4">{{ change.target_user.email }}</td>
+                <td>
+                  {% if change.action == 'promoted' %}
+                    <span class="badge bg-success">
+                      <i class="fa-solid fa-user-plus me-1"></i>Promoted
+                    </span>
+                  {% elif change.action == 'demoted' %}
+                    <span class="badge bg-danger">
+                      <i class="fa-solid fa-user-minus me-1"></i>Demoted
+                    </span>
+                  {% endif %}
+                </td>
+                <td>{{ change.actor_user.email }}</td>
+                <td class="small text-muted">
+                  {{ change.timestamp.strftime('%d %b %Y, %H:%M') }}
+                </td>
+                <td class="pe-4 small text-muted">
+                  {{ change.reason if change.reason else '—' }}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    {% endif %}
 
   </div>
 </section>

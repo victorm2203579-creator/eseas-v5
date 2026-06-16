@@ -178,6 +178,47 @@
         </div>
       </div><!-- /row 1 -->
 
+      <!-- Accuracy / Confidence banner (shown after scan) -->
+      <div id="accuracyPanel" class="card border-0 shadow-sm mb-4" style="display:none;">
+        <div class="card-body p-4">
+          <div class="row align-items-center g-3">
+            <div class="col-auto">
+              <div style="width:70px;height:70px;position:relative;">
+                <svg viewBox="0 0 70 70" style="width:70px;height:70px;transform:rotate(-90deg);">
+                  <circle cx="35" cy="35" r="28" fill="none" stroke="#e9ecef" stroke-width="7"/>
+                  <circle id="accCircle" cx="35" cy="35" r="28" fill="none" stroke="#198754"
+                          stroke-width="7" stroke-linecap="round"
+                          stroke-dasharray="176" stroke-dashoffset="176"
+                          style="transition:stroke-dashoffset .8s ease,stroke .4s ease;"/>
+                </svg>
+                <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+                  <span id="accPct" class="fw-bold" style="font-size:.95rem;color:var(--navy);">0%</span>
+                </div>
+              </div>
+            </div>
+            <div class="col">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <h6 class="fw-bold mb-0" style="color:var(--navy);">
+                  <i class="fa-solid fa-bullseye me-2" style="color:var(--orange)"></i>Analysis Confidence
+                </h6>
+                <span id="accLabel" class="badge bg-success" style="font-size:.72rem;">High</span>
+              </div>
+              <p id="accDesc" class="text-muted small mb-2" style="line-height:1.5;"></p>
+              <div class="progress" style="height:6px;border-radius:4px;max-width:420px;">
+                <div id="accBar" class="progress-bar bg-success"
+                     style="width:0%;transition:width .8s ease;border-radius:4px;"></div>
+              </div>
+            </div>
+            <div class="col-lg-4" id="accSignalsWrap">
+              <small class="text-muted fw-semibold d-block mb-2" style="text-transform:uppercase;letter-spacing:.05em;font-size:.7rem;">
+                Signals Used
+              </small>
+              <div id="accSignals" class="d-flex flex-wrap gap-1"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Row 2: Feature table + recommendation -->
       <div class="row g-4 mb-4">
 
@@ -230,6 +271,49 @@
         </div>
 
       </div><!-- /row 2 -->
+
+      <!-- Row 2.5: Layer Breakdown Panel -->
+      <div id="layerBreakdownSection" class="mb-4" style="display:none;">
+
+        <!-- Override Alert (if triggered) -->
+        <div id="overrideAlert" class="alert alert-danger border-0 rounded-3 shadow-sm mb-4 d-flex align-items-start gap-3" style="display:none;">
+          <i class="fa-solid fa-bolt fa-2x flex-shrink-0 mt-1" style="color:#dc3545;"></i>
+          <div class="flex-grow-1">
+            <h6 class="fw-bold mb-1">Override Rule Applied</h6>
+            <p id="overrideReason" class="mb-0 small text-muted"></p>
+          </div>
+        </div>
+
+        <!-- Confidence Indicator -->
+        <div class="row g-4 mb-4">
+          <div class="col-lg-3">
+            <div class="card border-0 shadow-sm h-100 text-center p-4">
+              <h6 class="text-muted fw-semibold text-uppercase mb-3" style="letter-spacing:.06em;font-size:.75rem;">Confidence Level</h6>
+              <div class="mb-3">
+                <span id="confidenceBadge" class="badge bg-success" style="font-size:1rem;padding:.6rem 1.2rem;">Very High</span>
+              </div>
+              <small id="confidenceText" class="text-muted">Based on 8 analysis layers</small>
+            </div>
+          </div>
+
+          <div class="col-lg-9">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-header py-3" style="background:var(--navy);">
+                <h6 class="text-white mb-0 fw-semibold">
+                  <i class="fa-solid fa-layer-group me-2" style="color:var(--orange)"></i>Layer-by-Layer Breakdown
+                </h6>
+              </div>
+              <div class="card-body p-4">
+                <div id="layerBreakdownList" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+                  <!-- Populated by JS -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /row 2.5 -->
+
       <!-- Row 3: Why This Decision? -->
       <div id="explanationSection" style="display:none;">
         <!-- Verdict Summary banner -->
@@ -309,12 +393,14 @@
                 <th class="text-white fw-semibold ps-4 py-3" style="font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;">URL</th>
                 <th class="text-white fw-semibold py-3" style="font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;min-width:130px;">Risk Score</th>
                 <th class="text-white fw-semibold py-3" style="font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;">Label</th>
+                <th class="text-white fw-semibold py-3" style="font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;min-width:110px;">Accuracy</th>
                 <th class="text-white fw-semibold py-3" style="font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;">Scanned</th>
                 <th class="text-white fw-semibold pe-4 py-3" style="font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;text-align:right;">Actions</th>
               </tr>
             </thead>
             <tbody id="histTbody">
               {% for s in recent_scans %}
+              {% set acc = s.accuracy %}
               <tr class="scan-hist-row" style="transition:background .15s;">
                 <td class="ps-4" style="max-width:280px;">
                   <div class="d-flex align-items-center gap-2">
@@ -342,6 +428,18 @@
                     {% else %}<i class="fa-solid fa-circle-check me-1"></i>{% endif %}
                     {{ s.final_label }}
                   </span>
+                </td>
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="progress flex-grow-1" style="height:5px;max-width:55px;border-radius:3px;">
+                      <div class="progress-bar {% if acc >= 80 %}bg-success{% elif acc >= 60 %}bg-warning{% else %}bg-secondary{% endif %}"
+                           style="width:{{ acc }}%"></div>
+                    </div>
+                    <span class="fw-semibold small {% if acc >= 80 %}text-success{% elif acc >= 60 %}text-warning{% else %}text-muted{% endif %}"
+                          title="Analysis confidence: {{ acc }}% — based on number of independent signals that confirmed this verdict">
+                      {{ acc }}%
+                    </span>
+                  </div>
                 </td>
                 <td class="small text-muted text-nowrap">
                   <i class="fa-regular fa-clock me-1 opacity-50"></i>
@@ -623,6 +721,88 @@ function renderExplanation(expl, riskColor) {
   document.getElementById('explanationSection').style.display = '';
 }
 
+// ── Accuracy / Confidence panel ──────────────────────────
+function renderAccuracy(accuracy, data) {
+  const panel  = document.getElementById('accuracyPanel');
+  const circle = document.getElementById('accCircle');
+  const pct    = document.getElementById('accPct');
+  const bar    = document.getElementById('accBar');
+  const label  = document.getElementById('accLabel');
+  const desc   = document.getElementById('accDesc');
+  const sigWrap = document.getElementById('accSignals');
+
+  if (!panel) return;
+
+  // Circle arc: circumference = 2π × 28 ≈ 176
+  const CIRC = 176;
+  const offset = CIRC - (accuracy / 100) * CIRC;
+
+  let color, labelText, labelCls, descText;
+  if (accuracy >= 85) {
+    color = '#198754'; labelCls = 'bg-success'; labelText = 'Very High';
+    descText = 'Multiple independent systems confirmed this verdict. High confidence in the result.';
+  } else if (accuracy >= 70) {
+    color = '#059669'; labelCls = 'bg-success'; labelText = 'High';
+    descText = 'Several detection layers agreed. The result is reliable.';
+  } else if (accuracy >= 55) {
+    color = '#fd7e14'; labelCls = 'bg-warning text-dark'; labelText = 'Moderate';
+    descText = 'Limited external confirmation. Based mainly on URL pattern analysis.';
+  } else {
+    color = '#6c757d'; labelCls = 'bg-secondary'; labelText = 'Low';
+    descText = 'Only URL heuristics were available. The URL has not been seen by threat databases yet.';
+  }
+
+  circle.style.stroke = color;
+  circle.style.strokeDashoffset = offset;
+  pct.textContent = accuracy + '%';
+  pct.style.color = color;
+  bar.style.width = accuracy + '%';
+  bar.style.background = color;
+  label.className = 'badge ' + labelCls;
+  label.textContent = labelText;
+  desc.textContent = descText;
+
+  // Signal pills
+  sigWrap.innerHTML = '';
+  const signals = [];
+  if (data.vt && (data.vt.total_engines > 0 || data.vt.detections > 0)) {
+    const det = data.vt.detections || 0;
+    const tot = data.vt.total_engines || 0;
+    signals.push({
+      icon: 'fa-virus', color: det > 0 ? 'danger' : 'success',
+      text: `VirusTotal ${det}/${tot}`
+    });
+  }
+  if (data.gsb && !data.gsb.error) {
+    const unsafe = data.gsb.threat_type && data.gsb.threat_type !== 'clean';
+    signals.push({ icon: 'fa-google fab', color: unsafe ? 'danger' : 'success', text: 'Safe Browsing' });
+  }
+  if (data.features && Object.keys(data.features).length > 0) {
+    signals.push({ icon: 'fa-brain', color: 'primary', text: 'ML Model' });
+  }
+  if (data.layer_breakdown && data.layer_breakdown.url_heuristics) {
+    const flags = (data.layer_breakdown.url_heuristics.flags || []).length;
+    if (flags > 0) {
+      signals.push({ icon: 'fa-magnifying-glass', color: flags >= 3 ? 'danger' : 'warning', text: `${flags} Heuristics` });
+    }
+  }
+  if (data.threat_feeds && data.threat_feeds.feeds_flagged > 0) {
+    signals.push({ icon: 'fa-shield-halved', color: 'danger', text: `${data.threat_feeds.feeds_flagged} Threat Feeds` });
+  }
+  signals.forEach(s => {
+    const span = document.createElement('span');
+    span.className = `badge bg-${s.color} bg-opacity-15 text-${s.color} border border-${s.color} border-opacity-25`;
+    span.style.cssText = 'font-size:.7rem;font-weight:500;';
+    span.innerHTML = `<i class="fa-solid ${s.icon} me-1"></i>${s.text}`;
+    sigWrap.appendChild(span);
+  });
+  if (signals.length === 0) {
+    sigWrap.innerHTML = '<span class="text-muted small">URL pattern analysis only</span>';
+  }
+
+  panel.style.display = '';
+}
+
 // ── Recommendation card style ────────────────────────────
 function styleRecommendCard(color) {
   const card = document.getElementById('recommendCard');
@@ -630,6 +810,86 @@ function styleRecommendCard(color) {
   if (color === 'danger')  card.classList.add('border-danger', 'bg-danger-subtle');
   else if (color === 'warning') card.classList.add('border-warning', 'bg-warning-subtle');
   else card.classList.add('border-success', 'bg-success-subtle');
+}
+
+// ── Layer breakdown rendering ────────────────────────────
+function renderLayerBreakdown(data) {
+  const section = document.getElementById('layerBreakdownSection');
+  const confidenceBadge = document.getElementById('confidenceBadge');
+  const confidenceText = document.getElementById('confidenceText');
+  const layerList = document.getElementById('layerBreakdownList');
+  const overrideAlert = document.getElementById('overrideAlert');
+  const overrideReason = document.getElementById('overrideReason');
+
+  if (!section) return;
+
+  // Show override alert if applicable
+  if (data.override_applied && data.override_reason) {
+    overrideAlert.style.display = '';
+    overrideReason.textContent = data.override_reason;
+  } else {
+    overrideAlert.style.display = 'none';
+  }
+
+  // Confidence level badge
+  const confColor = {
+    'Very High': 'success',
+    'High': 'success',
+    'Medium': 'warning',
+    'Low': 'warning',
+    'Very Low': 'danger'
+  }[data.confidence] || 'secondary';
+
+  confidenceBadge.className = `badge bg-${confColor}`;
+  confidenceBadge.textContent = data.confidence || 'Unknown';
+  confidenceText.textContent = `Based on ${data.layers_used || 0} analysis layer${data.layers_used !== 1 ? 's' : ''}`;
+
+  // Layer breakdown items
+  layerList.innerHTML = '';
+
+  const layerOrder = [
+    'virustotal', 'ml_model', 'google_safe_browsing', 'rule_based',
+    'threat_feeds', 'ssl_analysis', 'redirect_analysis', 'typosquatting', 'header_analysis'
+  ];
+
+  const layerNames = {
+    'virustotal': 'VirusTotal',
+    'ml_model': 'ML Model',
+    'google_safe_browsing': 'Google Safe Browsing',
+    'rule_based': 'Rule-Based',
+    'threat_feeds': 'Threat Feeds',
+    'ssl_analysis': 'SSL Certificate',
+    'redirect_analysis': 'Redirect Chain',
+    'typosquatting': 'Typosquatting',
+    'header_analysis': 'Email Headers'
+  };
+
+  if (data.layer_breakdown && typeof data.layer_breakdown === 'object') {
+    Object.entries(data.layer_breakdown).forEach(([layerKey, layerData]) => {
+      const score = layerData.score || 0;
+      const detail = layerData.detail || '';
+      const name = layerNames[layerKey] || layerKey;
+
+      // Determine color based on score
+      let scoreColor = '#198754';  // green
+      if (score >= 70) scoreColor = '#dc3545';  // red
+      else if (score >= 40) scoreColor = '#fd7e14';  // orange
+
+      const item = document.createElement('div');
+      item.innerHTML = `
+        <div style="padding-bottom:1rem;border-bottom:1px solid #e9ecef;">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <h6 class="fw-semibold small mb-0">${name}</h6>
+            <span style="font-weight:700;color:${scoreColor};font-size:1.1rem;">${Math.round(score)}</span>
+          </div>
+          <small class="text-muted d-block" style="line-height:1.4;">${detail}</small>
+        </div>`;
+      layerList.appendChild(item);
+    });
+  }
+
+  // Show section
+  section.style.display = '';
 }
 
 // ── Progress bar animation ────────────────────────────────
@@ -719,7 +979,7 @@ async function doScan() {
 
   try {
     const controller = new AbortController();
-    const tid = setTimeout(() => controller.abort(), 60000); // 60 s hard limit
+    const tid = setTimeout(() => controller.abort(), 20000); // 20 s hard limit
     let resp;
     try {
       resp = await fetch(SCAN_URL, {
@@ -748,6 +1008,8 @@ async function doScan() {
     renderDomainAge(data.domain_age);
     styleRecommendCard(data.risk_color);
     document.getElementById('recommendText').textContent = data.recommendation;
+    renderLayerBreakdown(data);
+    renderAccuracy(data.accuracy || 40, data);
     renderExplanation(data.explanation, data.risk_color);
 
     if (!data.model_available) {
@@ -785,6 +1047,7 @@ document.getElementById('scanAgainBtn').addEventListener('click', () => {
   document.getElementById('urlInput').value = '';
   document.getElementById('urlInput').focus();
   document.getElementById('resultPanel').style.display = 'none';
+  document.getElementById('accuracyPanel').style.display = 'none';
 });
 
 // ── History section: event delegation (works for existing + new rows) ──
@@ -873,10 +1136,12 @@ function addHistoryRow(data) {
   } catch (e) {}
   if (shortUrl.length > 55) shortUrl = shortUrl.substring(0, 52) + '…';
 
-  const c       = data.risk_color;
+  const c        = data.risk_color;
   const dotColor = c === 'danger' ? '#dc3545' : c === 'warning' ? '#fd7e14' : '#198754';
   const icon     = c === 'danger' ? 'fa-skull-crossbones' : c === 'warning' ? 'fa-triangle-exclamation' : 'fa-circle-check';
   const score    = Math.round(data.score);
+  const acc      = data.accuracy || 40;
+  const accColor = acc >= 80 ? 'success' : acc >= 60 ? 'warning' : 'secondary';
   const now      = new Date();
   const dateStr  = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
                  + ', ' + now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
@@ -905,6 +1170,15 @@ function addHistoryRow(data) {
       <span class="badge bg-${c} px-2 py-1">
         <i class="fa-solid ${icon} me-1"></i>${data.label}
       </span>
+    </td>
+    <td>
+      <div class="d-flex align-items-center gap-2"
+           title="Analysis confidence: ${acc}% — how many independent signals confirmed this verdict">
+        <div class="progress flex-grow-1" style="height:5px;max-width:55px;border-radius:3px;">
+          <div class="progress-bar bg-${accColor}" style="width:${acc}%"></div>
+        </div>
+        <span class="fw-semibold small text-${accColor}">${acc}%</span>
+      </div>
     </td>
     <td class="small text-muted text-nowrap">
       <i class="fa-regular fa-clock me-1 opacity-50"></i>${dateStr}
@@ -943,5 +1217,6 @@ function updateHistCount() {
   const n = histTbody.querySelectorAll('tr.scan-hist-row').length;
   countEl.textContent = `Showing last ${n} scan${n !== 1 ? 's' : ''}`;
 }
+
 </script>
 {% endblock %}

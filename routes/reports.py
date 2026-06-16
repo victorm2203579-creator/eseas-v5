@@ -10,6 +10,7 @@ from models import (
     TrainingModule, UserProgress, UserBadge, TrainingAssignment
 )
 from routes.decorators import admin_required
+from extensions import limiter
 
 try:
     from reportlab.lib.pagesizes import A4
@@ -122,6 +123,7 @@ def index():
 @reports.route('/export/scans/csv')
 @login_required
 @admin_required
+@limiter.limit('5 per minute; 20 per hour')  # Threat 10: Rate limit expensive export
 def export_scans_csv():
     scans = (
         db.session.query(ScanResult, User.name)
@@ -166,6 +168,7 @@ def export_scans_csv():
 @reports.route('/export/campaigns/csv')
 @login_required
 @admin_required
+@limiter.limit('5 per minute; 20 per hour')  # Threat 10: Rate limit expensive export
 def export_campaigns_csv():
     campaigns = Campaign.query.order_by(Campaign.created_at.desc()).all()
 
@@ -206,6 +209,7 @@ def export_campaigns_csv():
 @reports.route('/export/users/csv')
 @login_required
 @admin_required
+@limiter.limit('5 per minute; 20 per hour')  # Threat 10: Rate limit expensive export
 def export_users_csv():
     users = User.query.order_by(User.created_at.desc()).all()
 
@@ -244,6 +248,7 @@ def export_users_csv():
 @reports.route('/export/training/csv')
 @login_required
 @admin_required
+@limiter.limit('5 per minute; 20 per hour')  # Threat 10: Rate limit expensive export
 def export_training_csv():
     rows = (
         db.session.query(UserProgress, User, TrainingModule)
@@ -291,6 +296,7 @@ def export_training_csv():
 @reports.route('/full/pdf')
 @login_required
 @admin_required
+@limiter.limit('5 per minute; 20 per hour')  # Threat 10: Rate limit expensive export
 def export_full_pdf():
     if not REPORTLAB_OK:
         flash(

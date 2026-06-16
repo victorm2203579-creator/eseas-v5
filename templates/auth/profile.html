@@ -138,10 +138,63 @@
 
               <div class="mt-4">
                 {{ form.submit(class='btn btn-orange px-4') }}
-                <a href="{{ url_for('auth.reset_request') }}"
-                   class="btn btn-outline-secondary ms-2">
-                  <i class="fa-solid fa-key me-1"></i>Change Password
-                </a>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Change Password card -->
+        <div class="card border-0 shadow-sm mb-4">
+          <div class="card-header py-3" style="background:var(--navy)">
+            <h6 class="text-white mb-0 fw-semibold">
+              <i class="fa-solid fa-key me-2" style="color:var(--orange)"></i>Change Password
+            </h6>
+          </div>
+          <div class="card-body p-4">
+            <form method="POST" action="{{ url_for('auth.change_password') }}" novalidate>
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <div class="row g-3">
+                <div class="col-md-12">
+                  <label class="form-label fw-semibold">Current Password</label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0">
+                      <i class="fa-solid fa-lock text-muted"></i>
+                    </span>
+                    <input type="password" name="current_password" class="form-control border-start-0 ps-0" placeholder="Enter your current password" required>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">New Password</label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0">
+                      <i class="fa-solid fa-lock-open text-muted"></i>
+                    </span>
+                    <input type="password" name="new_password" id="newPw" class="form-control border-start-0 border-end-0 ps-0" placeholder="Min 8 chars, uppercase & number" required>
+                    <button class="btn btn-outline-secondary border-start-0" type="button" id="toggleNewPw" tabindex="-1">
+                      <i class="fa-solid fa-eye" id="toggleNewPwIcon"></i>
+                    </button>
+                  </div>
+                  <!-- Strength bar -->
+                  <div class="progress mt-2" style="height:5px;" id="pwStrengthBar">
+                    <div class="progress-bar" id="pwStrengthFill" role="progressbar"></div>
+                  </div>
+                  <small id="pwStrengthLabel" class="text-muted"></small>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Confirm New Password</label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0">
+                      <i class="fa-solid fa-check text-muted"></i>
+                    </span>
+                    <input type="password" name="confirm_password" id="confirmPw" class="form-control border-start-0 ps-0" placeholder="Repeat new password" required>
+                  </div>
+                  <small id="pwMatchLabel" class="text-muted"></small>
+                </div>
+              </div>
+              <div class="mt-4">
+                <button type="submit" class="btn btn-orange px-4">
+                  <i class="fa-solid fa-save me-1"></i>Update Password
+                </button>
               </div>
             </form>
           </div>
@@ -199,4 +252,58 @@
     </div><!-- /row -->
   </div>
 </section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Show/hide new password
+  document.getElementById('toggleNewPw').addEventListener('click', () => {
+    const pw = document.getElementById('newPw');
+    const icon = document.getElementById('toggleNewPwIcon');
+    pw.type = pw.type === 'password' ? 'text' : 'password';
+    icon.classList.toggle('fa-eye');
+    icon.classList.toggle('fa-eye-slash');
+  });
+
+  // Password strength meter
+  document.getElementById('newPw').addEventListener('input', function () {
+    const val = this.value;
+    const fill = document.getElementById('pwStrengthFill');
+    const label = document.getElementById('pwStrengthLabel');
+    let score = 0;
+    if (val.length >= 8)           score++;
+    if (/[A-Z]/.test(val))         score++;
+    if (/\d/.test(val))            score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+    const levels = [
+      { pct: 0,   cls: '',           text: '' },
+      { pct: 25,  cls: 'bg-danger',  text: 'Weak' },
+      { pct: 50,  cls: 'bg-warning', text: 'Fair' },
+      { pct: 75,  cls: 'bg-info',    text: 'Good' },
+      { pct: 100, cls: 'bg-success', text: 'Strong' },
+    ];
+    const lvl = levels[score];
+    fill.style.width = lvl.pct + '%';
+    fill.className = 'progress-bar ' + lvl.cls;
+    label.textContent = lvl.text;
+    label.className = 'small ' + (score < 2 ? 'text-danger' : score < 4 ? 'text-warning' : 'text-success');
+    checkMatch();
+  });
+
+  // Password match indicator
+  function checkMatch() {
+    const pw = document.getElementById('newPw').value;
+    const confirm = document.getElementById('confirmPw').value;
+    const label = document.getElementById('pwMatchLabel');
+    if (!confirm) { label.textContent = ''; return; }
+    if (pw === confirm) {
+      label.textContent = '✓ Passwords match';
+      label.className = 'small text-success';
+    } else {
+      label.textContent = '✗ Passwords do not match';
+      label.className = 'small text-danger';
+    }
+  }
+  document.getElementById('confirmPw').addEventListener('input', checkMatch);
+</script>
 {% endblock %}

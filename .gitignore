@@ -41,3 +41,7 @@ build/
 
 # Logs
 *.log
+
+# Third-party tools (download separately, do not commit)
+ngrok.exe
+*.exe

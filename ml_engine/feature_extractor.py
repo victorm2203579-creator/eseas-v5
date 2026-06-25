@@ -10,9 +10,11 @@ Use fast=True for batch training; use fast=False for real-time predictions.
 """
 
 import re
+import math
 import socket
 import ssl
 import dns.resolver
+from collections import Counter
 from urllib.parse import urlparse, parse_qs
 from datetime import datetime, timezone
 
@@ -49,6 +51,72 @@ _SUSPICIOUS_KEYWORDS = {
 }
 
 _IP_RE = re.compile(r'^(\d{1,3}\.){3}\d{1,3}$')
+
+# ── lexical-only enrichment (no network calls — keeps fast=True instant) ──
+_SUSPICIOUS_TLDS_ML = {
+    'xyz', 'tk', 'ml', 'ga', 'cf', 'gq', 'pw', 'top', 'click', 'link',
+    'online', 'site', 'club', 'work', 'bid', 'win', 'stream', 'download',
+    'party', 'icu', 'su', 'cc', 'bz', 'info', 'biz',
+}
+
+_MAJOR_BRANDS = [
+    'google', 'gmail', 'facebook', 'instagram', 'twitter', 'microsoft',
+    'outlook', 'hotmail', 'apple', 'icloud', 'amazon', 'paypal', 'ebay',
+    'netflix', 'spotify', 'dropbox', 'linkedin', 'bankofamerica', 'chase',
+    'wellsfargo', 'barclays', 'hsbc', 'zenithbank', 'gtbank', 'firstbank',
+    'whatsapp', 'telegram', 'github', 'yahoo', 'dhl', 'fedex', 'ups',
+]
+
+_VOWELS = set('aeiou')
+
+
+def _shannon_entropy(s: str) -> float:
+    """Shannon entropy of a string — random/algorithmically-generated strings score higher."""
+    if not s:
+        return 0.0
+    counts = Counter(s)
+    length = len(s)
+    return -sum((c / length) * math.log2(c / length) for c in counts.values())
+
+
+def _simple_levenshtein(s1: str, s2: str) -> int:
+    if len(s1) < len(s2):
+        return _simple_levenshtein(s2, s1)
+    if len(s2) == 0:
+        return len(s1)
+    previous_row = list(range(len(s2) + 1))
+    for i, c1 in enumerate(s1):
+        current_row = [i + 1]
+        for j, c2 in enumerate(s2):
+            insertions = previous_row[j + 1] + 1
+            deletions = current_row[j] + 1
+            substitutions = previous_row[j] + (c1 != c2)
+            current_row.append(min(insertions, deletions, substitutions))
+        previous_row = current_row
+    return previous_row[-1]
+
+
+def _brand_similarity(domain_root: str) -> float:
+    """Max similarity (0-1) of the domain's main label to a known brand —
+    catches typosquats like 'paypa1' or 'arnazon' without exact substring match."""
+    label = domain_root.split('.')[0] if domain_root else ''
+    if not label or len(label) < 3:
+        return 0.0
+    best = 0.0
+    for brand in _MAJOR_BRANDS:
+        if label == brand:
+            # Exact match means it IS the brand's own real word, not an
+            # impersonation attempt — skip so genuine sites aren't flagged.
+            continue
+        dist = _simple_levenshtein(label, brand)
+        sim = 1 - (dist / max(len(label), len(brand)))
+        if sim > best:
+            best = sim
+    # Exact-substring containment (e.g. "paypal-secure") is a strong signal too
+    for brand in _MAJOR_BRANDS:
+        if brand in label and brand != label:
+            best = max(best, 0.85)
+    return round(best, 3)
 
 
 def _normalise(url: str) -> str:
@@ -94,6 +162,21 @@ class FeatureExtractor:
         'Google_Index',
         'Links_pointing_to_page',
         'Statistical_report',
+        # Lexical enrichment (instant, no network calls — fixes fast=True
+        # mode having only ~9 informative features out of the original 30)
+        'url_entropy',
+        'domain_entropy',
+        'digit_ratio',
+        'special_char_count',
+        'hyphen_count',
+        'dot_count',
+        'path_depth',
+        'query_param_count',
+        'suspicious_keyword_count',
+        'brand_similarity_score',
+        'tld_suspicious',
+        'has_punycode',
+        'vowel_ratio',
     ]
 
     def extract(self, url: str, fast: bool = False) -> dict:
@@ -222,6 +305,23 @@ class FeatureExtractor:
         # Feature 30: Statistical_report (in known phishing DB)
         stat_report = self._check_phishing_reports(host, fast)
 
+        # ── Lexical enrichment features (instant, URL-string only) ──
+        url_entropy = round(_shannon_entropy(url), 3)
+        domain_entropy = round(_shannon_entropy(host), 3)
+        digit_ratio = round(sum(c.isdigit() for c in url) / len(url), 3) if url else 0.0
+        special_char_count = len(re.findall(r'[^a-zA-Z0-9./:]', url))
+        hyphen_count = host.count('-')
+        dot_count = url.count('.')
+        path_depth = len([p for p in path.split('/') if p])
+        query_param_count = len(parse_qs(query))
+        suspicious_keyword_count = sum(1 for kw in _SUSPICIOUS_KEYWORDS if kw in url.lower())
+        brand_similarity_score = _brand_similarity(root_domain)
+        tld = root_domain.rsplit('.', 1)[-1] if '.' in root_domain else ''
+        tld_suspicious = 1 if tld in _SUSPICIOUS_TLDS_ML else -1
+        has_punycode = 1 if host.startswith('xn--') or '.xn--' in host else -1
+        letters = [c for c in host if c.isalpha()]
+        vowel_ratio = round(sum(c in _VOWELS for c in letters) / len(letters), 3) if letters else 0.0
+
         return {
             'having_IP_Address': has_ip,
             'URL_Length': url_length,
@@ -254,6 +354,19 @@ class FeatureExtractor:
             'Google_Index': google_index,
             'Links_pointing_to_page': backlinks,
             'Statistical_report': stat_report,
+            'url_entropy': url_entropy,
+            'domain_entropy': domain_entropy,
+            'digit_ratio': digit_ratio,
+            'special_char_count': special_char_count,
+            'hyphen_count': hyphen_count,
+            'dot_count': dot_count,
+            'path_depth': path_depth,
+            'query_param_count': query_param_count,
+            'suspicious_keyword_count': suspicious_keyword_count,
+            'brand_similarity_score': brand_similarity_score,
+            'tld_suspicious': tld_suspicious,
+            'has_punycode': has_punycode,
+            'vowel_ratio': vowel_ratio,
         }
 
     @staticmethod
@@ -649,6 +762,19 @@ FEATURE_THRESHOLDS = {
     'Google_Index':             {'warn': 0.5, 'fail': 0.5,  'higher_is_bad': True},
     'Links_pointing_to_page':   {'warn': 0,   'fail': 0,    'higher_is_bad': True},
     'Statistical_report':       {'warn': 0.5, 'fail': 0.5,  'higher_is_bad': True},
+    'url_entropy':               {'warn': 4.3, 'fail': 4.8, 'higher_is_bad': True},
+    'domain_entropy':            {'warn': 3.5, 'fail': 4.0, 'higher_is_bad': True},
+    'digit_ratio':                {'warn': 0.15, 'fail': 0.3, 'higher_is_bad': True},
+    'special_char_count':         {'warn': 5,   'fail': 10,  'higher_is_bad': True},
+    'hyphen_count':                {'warn': 2,   'fail': 4,   'higher_is_bad': True},
+    'dot_count':                    {'warn': 4,   'fail': 6,   'higher_is_bad': True},
+    'path_depth':                    {'warn': 4,   'fail': 7,   'higher_is_bad': True},
+    'query_param_count':              {'warn': 5,   'fail': 10,  'higher_is_bad': True},
+    'suspicious_keyword_count':        {'warn': 1,   'fail': 2,   'higher_is_bad': True},
+    'brand_similarity_score':           {'warn': 0.6, 'fail': 0.8, 'higher_is_bad': True},
+    'tld_suspicious':                    {'warn': 1,   'fail': 1,   'higher_is_bad': True},
+    'has_punycode':                       {'warn': 1,   'fail': 1,   'higher_is_bad': True},
+    'vowel_ratio':                         {'warn': 0.25, 'fail': 0.15, 'higher_is_bad': False},
 }
 
 

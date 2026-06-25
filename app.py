@@ -1,3 +1,9 @@
+import truststore
+truststore.inject_into_ssl()  # trust the OS certificate store (needed when local
+# AV/security software does TLS interception with a root CA that's trusted by
+# Windows but not by Python's bundled certifi list) — must run before any
+# requests/ssl usage, so this import stays first.
+
 from flask import Flask, render_template, session, redirect, url_for, request
 from flask_login import LoginManager, logout_user, current_user
 from flask_migrate import Migrate

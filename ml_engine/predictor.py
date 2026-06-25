@@ -80,6 +80,19 @@ _FEATURE_LABELS = {
     'Google_Index':                 'Google Indexed',
     'Links_pointing_to_page':       'External Backlinks',
     'Statistical_report':           'Phishing Database Report',
+    'url_entropy':                  'URL Randomness',
+    'domain_entropy':               'Domain Randomness',
+    'digit_ratio':                  'Digit Density',
+    'special_char_count':           'Special Character Count',
+    'hyphen_count':                 'Hyphen Count',
+    'dot_count':                    'Dot Count',
+    'path_depth':                   'Path Depth',
+    'query_param_count':            'Query Parameter Count',
+    'suspicious_keyword_count':     'Suspicious Keyword Count',
+    'brand_similarity_score':       'Brand Impersonation Similarity',
+    'tld_suspicious':               'Suspicious TLD',
+    'has_punycode':                 'Punycode Domain',
+    'vowel_ratio':                  'Vowel Ratio',
 }
 
 
@@ -314,6 +327,71 @@ def generate_explanation(features: dict, feature_flags: dict, score: int, label:
             'triggered': 'This domain appears in known phishing or malware reports. It has been flagged by security researchers as malicious.',
             'clean': 'This domain does not appear in known phishing or malware reports, which is a good sign.',
         },
+        'url_entropy': {
+            'label': 'URL Randomness',
+            'triggered': 'The URL has unusually high character randomness (entropy), a pattern typical of algorithmically-generated phishing domains or encoded malicious payloads.',
+            'clean': 'The URL has normal character randomness, consistent with a human-chosen, legitimate address.',
+        },
+        'domain_entropy': {
+            'label': 'Domain Randomness',
+            'triggered': 'The domain name itself has unusually high character randomness, suggesting it may be machine-generated rather than a real brand or organisation name.',
+            'clean': 'The domain name has normal character randomness, consistent with a legitimate, human-chosen name.',
+        },
+        'digit_ratio': {
+            'label': 'Digit Density',
+            'triggered': 'A large proportion of the URL consists of digits. This is common in phishing URLs that embed random tokens, IDs, or obfuscated paths.',
+            'clean': 'The URL has a normal proportion of digits, consistent with legitimate websites.',
+        },
+        'special_char_count': {
+            'label': 'Special Character Count',
+            'triggered': 'The URL contains an unusually high number of special characters, which is often used to obfuscate the real destination or confuse security filters.',
+            'clean': 'The URL contains a normal number of special characters.',
+        },
+        'hyphen_count': {
+            'label': 'Hyphen Count',
+            'triggered': 'The domain contains multiple hyphens, a pattern frequently used to imitate brand names (e.g. "secure-paypal-login.com").',
+            'clean': 'The domain contains few or no hyphens, consistent with legitimate domain naming.',
+        },
+        'dot_count': {
+            'label': 'Dot Count',
+            'triggered': 'The URL contains an unusually high number of dots, indicating excessive subdomains or an attempt to disguise the true domain.',
+            'clean': 'The URL has a normal number of dots, consistent with legitimate website structure.',
+        },
+        'path_depth': {
+            'label': 'Path Depth',
+            'triggered': 'The URL path has an unusually deep folder structure, a pattern sometimes used to bury a malicious page or make the URL look more "official."',
+            'clean': 'The URL path depth is normal for a legitimate website.',
+        },
+        'query_param_count': {
+            'label': 'Query Parameter Count',
+            'triggered': 'The URL contains an unusually large number of query parameters, which can be used to pass tracking tokens, obfuscated data, or session-hijacking payloads.',
+            'clean': 'The URL has a normal number of query parameters.',
+        },
+        'suspicious_keyword_count': {
+            'label': 'Suspicious Keyword Count',
+            'triggered': 'The URL contains words commonly used in phishing attempts (e.g. "verify", "secure", "login", "update", "account"), often used to create urgency or imitate legitimate security prompts.',
+            'clean': 'The URL does not contain common phishing-related keywords.',
+        },
+        'brand_similarity_score': {
+            'label': 'Brand Impersonation Similarity',
+            'triggered': 'The domain closely resembles a well-known brand name (e.g. "paypa1" instead of "paypal"). This is a strong indicator of typosquatting designed to deceive users into thinking they are on a trusted site.',
+            'clean': 'The domain does not closely resemble any well-known brand name.',
+        },
+        'tld_suspicious': {
+            'label': 'Suspicious TLD',
+            'triggered': 'The domain uses a top-level domain (e.g. .xyz, .tk, .top) that is frequently abused for phishing and malware because of its low cost and lax registration requirements.',
+            'clean': 'The domain uses a standard, reputable top-level domain.',
+        },
+        'has_punycode': {
+            'label': 'Punycode Domain',
+            'triggered': 'The domain uses punycode encoding (xn--), which can be used to display look-alike international characters that visually mimic a trusted domain (an IDN homograph attack).',
+            'clean': 'The domain does not use punycode encoding.',
+        },
+        'vowel_ratio': {
+            'label': 'Vowel Ratio',
+            'triggered': 'The domain has an unusually low ratio of vowels to consonants, a pattern typical of randomly generated or algorithmically created domain names rather than real words.',
+            'clean': 'The domain has a normal vowel-to-consonant ratio, consistent with a real, human-readable name.',
+        },
     }
 
     _SEVERITY_MAP = {
@@ -347,6 +425,19 @@ def generate_explanation(features: dict, feature_flags: dict, score: int, label:
         'Google_Index':                 'medium',
         'Links_pointing_to_page':       'low',
         'Statistical_report':           'high',
+        'url_entropy':                  'medium',
+        'domain_entropy':               'medium',
+        'digit_ratio':                  'low',
+        'special_char_count':           'low',
+        'hyphen_count':                 'low',
+        'dot_count':                    'low',
+        'path_depth':                   'low',
+        'query_param_count':            'low',
+        'suspicious_keyword_count':     'medium',
+        'brand_similarity_score':       'high',
+        'tld_suspicious':               'medium',
+        'has_punycode':                 'high',
+        'vowel_ratio':                  'low',
     }
 
     # Override severity to high when domain age < 30 or when flag=fail

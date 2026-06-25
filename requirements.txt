@@ -16,6 +16,7 @@ scikit-learn>=1.5.0
 pandas>=2.2.0
 numpy>=2.0.0
 joblib>=1.3.2
+xgboost>=2.0.0
 # Utilities
 python-whois>=0.8.0
 requests>=2.31.0
@@ -28,6 +29,7 @@ SQLAlchemy>=2.0.36
 Jinja2>=3.1.2
 python-Levenshtein>=0.20.0
 imbalanced-learn>=0.10.0
+truststore>=0.9.0
 lxml>=4.9.0
 bleach>=6.0.0
 markupsafe>=2.1.0

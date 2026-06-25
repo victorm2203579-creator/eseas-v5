@@ -56,7 +56,7 @@ project/
 │   └── (rate limiting, IDOR prevention, SSRF guards, concurrent-scan locks)
 │
 ├── ml_engine/
-│   ├── feature_extractor.py    # 30-feature URL extractor (fast=True = lexical-only, instant)
+│   ├── feature_extractor.py    # 43-feature URL extractor (fast=True = lexical-only, instant)
 │   ├── predictor.py             # Loads model, runs prediction, VT/GSB integration
 │   ├── scoring_engine.py        # Combines all analysis layers into one final risk score
 │   ├── threat_feeds.py          # URLhaus / OpenPhish / URLvoid queries
@@ -194,6 +194,8 @@ Each scan combines several independent signals, weighted by reliability:
 | Redirect Chain Analysis | **2%** | Multi-hop redirects often hide phishing destination |
 | Typosquatting Detection | **1%** | Similarity to known legitimate brands |
 
+**Measured full-system performance**: 95.00% accuracy, 90.91% precision, 100% recall, 95.24% F1 — measured end-to-end (real VT/GSB API calls included) on 100 held-out URLs not used in ML training. See `python ml_engine/evaluate_system.py` and `PROJECT_SUMMARY.md` → "Full-System Evaluation" for methodology and the 5 false-positive cases.
+
 ### Override Rules
 
 On top of the weighted average, several **override floors** enforce minimum scores to catch
@@ -203,6 +205,7 @@ phishing that would otherwise slip through:
 - **GSB phishing flag**: min 70 (High Risk)
 - **3+ heuristic red flags**: min 41 (Suspicious) — prevents Safe/Low Risk when multiple local patterns match
 - **Heuristic score ≥70**: min 62 (Suspicious) — strong local signals override weak external votes
+- **Unresolvable URL shortener**: known shortener domain (`t.co`, `bit.ly`, `tinyurl.com`, etc.) + redirect chain couldn't be resolved → min 41 (Suspicious). Zero visibility into a shortener's real destination is itself a risk signal — VT/GSB/heuristics otherwise grade the clean-looking literal short link instead of where it actually goes.
 
 ### Risk Labels & Thresholds
 
@@ -358,15 +361,40 @@ python ml_engine/train_model.py
 ```
 
 This reads `../Data/URL dataset.csv` (real, labeled legitimate + phishing URLs — **not**
-synthetic data), extracts the 30-feature lexical vector in the same `fast=True` mode used at
-inference time, trains a `RandomForestClassifier` with a balanced 50/50 sample of both
-classes, and overwrites `phishing_model.pkl`.
+synthetic data), extracts the 43-feature lexical vector in the same `fast=True` mode used at
+inference time (30 original CTU/PhishTank-style features + 13 enriched features: entropy,
+character ratios, brand-similarity, suspicious-TLD/punycode flags, etc.), applies SMOTE
+oversampling to the training split, trains a soft-voting ensemble (RandomForest + ExtraTrees +
+XGBoost) with a balanced 50/50 sample of both classes, and overwrites `phishing_model.pkl`.
+
+**Measured test-set performance**: 91.92% accuracy, 94.32% precision, 89.20% recall, 91.69% F1.
+An earlier single-RandomForest version on the original 30-feature set measured only 60.90%
+accuracy — the gap was feature impoverishment, not the algorithm: in `fast=True` mode, only
+9 of those 30 features actually vary (the rest depend on skipped network calls and default to
+constants). The 13 enriched features fixed that without adding any network dependency.
 
 > **Why "fast=True" for both training and inference matters:** the live scanner uses
 > lexical-only feature extraction (no live network calls) to keep every scan under 10
 > seconds. The model is trained on the *same* feature distribution it sees at inference —
 > training on a richer feature set (with WHOIS/SSL/page-content data) while serving on the
 > lexical-only set would make the model see out-of-distribution input on every real scan.
+
+### Evaluating the full system (optional)
+
+`train_model.py` measures the ML model alone. To measure the actual deployed pipeline —
+ML + VirusTotal + Google Safe Browsing + URL rules + threat feeds + SSL + redirect +
+typosquatting, combined exactly as `routes/analyzer.py` does on a real scan:
+
+```bash
+python ml_engine/evaluate_system.py --n-per-class 50
+```
+
+This samples URLs held out from ML training, runs each through the real pipeline (live VT/GSB
+API calls included), and reports accuracy/precision/recall/F1 against ground truth. Runtime is
+dominated by VirusTotal's free-tier rate limit (~4 req/min), so `--n-per-class 50` (100 URLs
+total) takes ~25-30 minutes. Results are saved to `ml_engine/system_eval_results.json`.
+
+**Measured result**: 95.00% accuracy, 90.91% precision, 100% recall, 95.24% F1.
 
 ---
 
@@ -375,7 +403,7 @@ classes, and overwrites `phishing_model.pkl`.
 ### Multi-Layer Scoring (Fast & Accurate)
 
 - **VirusTotal**: 70+ independent antivirus engines (when available)
-- **ML Model**: Fast lexical-only classifier (no network calls, <1s)
+- **ML Model**: Fast lexical-only voting ensemble (RandomForest + ExtraTrees + XGBoost), no network calls, <1s, 91.92% test accuracy
 - **Google Safe Browsing**: Binary phishing/malware flag
 - **URL Heuristics**: Pattern matching (hex tokens, malware extensions, phishing keywords, IP hosts, suspicious paths)
 - **Threat Feeds**: Real-time URLhaus/OpenPhish/URLvoid consensus

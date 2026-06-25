@@ -1,0 +1,820 @@
+{
+  "n_per_class": 50,
+  "total_urls": 100,
+  "accuracy": 0.95,
+  "precision": 0.9090909090909091,
+  "recall": 1.0,
+  "f1_score": 0.9523809523809523,
+  "confusion_matrix": [
+    [
+      45,
+      5
+    ],
+    [
+      0,
+      50
+    ]
+  ],
+  "records": [
+    {
+      "url": "http://blend42.cz/*/fr/Service/ID-2036584618311/Clients.Impot-Gouv/accueil/b289012830543f258be918a26e38d32c",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 85,
+      "risk_level": "Phishing",
+      "layers_used": 8
+    },
+    {
+      "url": "http://amthanhmienbac.com/modules/profile/trustpass.html",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 78,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.radiotimes.com/film/",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 15,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.manta.com/c/mm7tqyc/bang-zoom-entertainment",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 3,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.perfectliker.com/",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 78,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "http://aberfoyledental.ca/97q0eu",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 78,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.nona.net/features/map/placedetail.550499/Drnovo/",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 15,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.hockeyfights.com/fights/101114",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 9,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.legacy.com/obituaries/bucyrustelegraphforum/obituary.aspx?n=kelly-j-kurtzman&pid=152889856",
+      "true_label": 0,
+      "predicted_label": 1,
+      "final_score": 42,
+      "risk_level": "Suspicious",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.usna.edu/cemetery/lookup/A%20to%20Forms.htm",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 10,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://pastebin.com/js1cjctM",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 52,
+      "risk_level": "Suspicious",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.123people.com/s/nini+marshal",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 5,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://mystmarco.net/4149zgun",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 52,
+      "risk_level": "Suspicious",
+      "layers_used": 8
+    },
+    {
+      "url": "http://80.87.220.102/sats011.doc",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 62,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "http://departs-adsinfengering-verify003.16mb.com/FB/Confirm.Htm",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 78,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "http://odontobras.com.br/cnt/ra/index.php",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 78,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "http://xn--k1affefe.xn--p1ai/8wzzjk24u",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 85,
+      "risk_level": "Phishing",
+      "layers_used": 8
+    },
+    {
+      "url": "http://fpihkdvz.com/forums/index.php",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 62,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.newsarama.com/film/sdcc-2011-legendary-pictures-panel-110722.html",
+      "true_label": 0,
+      "predicted_label": 1,
+      "final_score": 41,
+      "risk_level": "Suspicious",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.answers.com/topic/johnson-brad",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 4,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://customheavytimber.com/wp-admin/network/docs/6c919a314cd578d96f14d0d12d7cbd44/",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 78,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "http://joger.se/Money/dpbx",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 70,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.uncreativelamename.blogspot.com/",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 4,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://webmail.mhcable.com/secure/www.paypal.com/websc-login.php?Go=_Restore_Start&amp;_Acess_Tooken=057a0ffd78da496e347c1cdb3ddaecab057a0ffd78da496e347c1cdb3ddaecab",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 100,
+      "risk_level": "Phishing",
+      "layers_used": 8
+    },
+    {
+      "url": "http://social-plugins.net/framework/models/doc/doc/pvalidate.html",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 70,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "http://www.stdporta.com/js/account/34.237.113.113-ec2-34-237-113-113.compute-1.amazonaws.com/",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 78,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "http://stylesendnblisprestval.xyz",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 70,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "http://bjcurio.com/js/index.htm?ref=http://bsfdlcpus.battle.net/d3/en/index",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 78,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.coronationstreet.wikia.com/wiki/Deirdre_Barlow",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 2,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.uk.ask.com/wiki/U.S._Route_61",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 4,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.lexingtonfilm.com/bobnewhartinterview.htm",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 5,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://thefashionmermaid.com/preview/instructions/up/index.php",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 85,
+      "risk_level": "Phishing",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.meltingpot.fortunecity.com/virginia/670/ndcentralfallsribap.htm",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 6,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://peoplemercethe.ru/uploads/gixnyxgtzww.png",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 60,
+      "risk_level": "Suspicious",
+      "layers_used": 8
+    },
+    {
+      "url": "http://www.mehrabtech.ae/7832ghd",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 78,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "http://p2pbikini.com/ccec0t",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 70,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.limaohio.com/sections/local-news/?fabc=1&catid=13652",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 13,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://larah.in/rdccc1/rdc/rdc/pro/enterprise.php?check&amp;nocache=page2&amp;alt.done=rem&amp;docs&amp;=gifpdf&amp;bIr7soIuuZOompasbF",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 70,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.imdb.com/title/tt0108756/epcast",
+      "true_label": 0,
+      "predicted_label": 1,
+      "final_score": 52,
+      "risk_level": "Suspicious",
+      "layers_used": 8
+    },
+    {
+      "url": "http://veritas-clothing.com/leopads/Dropbox/dropbox/",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 78,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.dbpedia.org/page/Bill_Ellerington",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 5,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://mundomatero.com/Remax/index2.html/index_files/index_files/index_files/index_files/index_files/index_files/index_files/index_files/index_files/index_files/index_files/index_files/index_files/index_files/index_files/index_files/google.htm",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 78,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.richerditlafleche.org/bd/en/f196.html",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 11,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://instantautotitleloans.com/filllet/pagedoc/page",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 70,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.harpercollins.com/",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 5,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://nolagroup.com/man-power/GD/index.php",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 78,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.gfdb.com/Player.2968.David-Beckham.aspx",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 13,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://camarillolongdistancemovers.com/blog/wp-admin/images/pypan/",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 78,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.celebnakedness.com/tour/videoarchive.php?celeb_first_name=j",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 15,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.hockey-reference.com/teams/OTT/2011.html",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 12,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://w-reia.com/bremer/new.php?cmd=login_submit&amp;id=11336f85edbb4d484e8039c32160b4cc11336f85edbb4d484e8039c32160b4cc&amp;session=11336f85edbb4d484e8039c32160b4cc11336f85edbb4d484e8039c32160b4cc",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 98,
+      "risk_level": "Phishing",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.freepages.genealogy.rootsweb.ancestry.com/~obitsindex/obits_ct_unknown_p_01.htm",
+      "true_label": 0,
+      "predicted_label": 1,
+      "final_score": 41,
+      "risk_level": "Suspicious",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.en.wikipedia.org/wiki/Category:1903_in_the_United_States",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 0,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://wbaskcsxiffiax.info/linuxsucks.php",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 78,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "http://snip.ly/d9nvv",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 78,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.maths.tcd.ie/~dwilkins/Courses/311/",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 5,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://kinosiaxle.ge/upload/2011/login.alibaba.com/login.html",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 70,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "http://kf25zx.com/images/?us.battle.net/login/en/http:",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 70,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.kittyempire.org/viewy/",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 12,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.spn.org/directory/david-horowitz-freedom-center",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 9,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.oaklandlocal.com/article/future-piedmont%E2%80%99s-sole-library-limbo",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 6,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.radio-info.com/stations/kmbz-fm",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 19,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://hyviverrou.chateau-zen.fr/hmhxw77d4x.php\\nwww.mowershop.co.uk/index.html",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 52,
+      "risk_level": "Suspicious",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.carpages.ca/blog/2011/04/29/communauto-to-introduce-one-way-carsharing-in-quebec/",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 12,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.gigabitwarez.com/download/julie+crochetiere.html",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 8,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://air88.ns01.us:53/js/af130901.jpg",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 78,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.faqs.org/copyright/the-gospel-train-negro-spiritual-arr-frederic-westcott/",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 6,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://designspd.com/blog/wp-content/onlineupdate/37cba816b8fe06dcc225dc5de3d19899/index2.html?https://chaseonline.chase.com/public/IdentifyUser.aspx?LOB=RBGLogon",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 80,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "http://digitacaoveloz.com.br/zo0oub",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 78,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.lookooh.com/S/California/Schools-Junior+High.html",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 18,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://comporationssoulll.com/petrol/messi/",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 70,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "http://cafebu.com.au/wp-content/themes/twentyfifteen/inc/boxd/index.ph...",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 78,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "http://sigaramakinesi.gen.tr/.well-known/pki-validation/includes/atualizacao/Inicial.php",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 85,
+      "risk_level": "Phishing",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.gatewayno.com/history/Bienville.html",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 18,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.robert-silverman.com/",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 7,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.tcm.com/tcmdb/title/76799/Grand-Illusion/",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 6,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.crossplains.com/howard/",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 10,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://paypal.konten-0x00x12-verifizierungs.com/956430/ger/konflict/8065126224420/angabe/validierung/anmelden.php?cmd=qG1CJIthMgXDEyp3rYxmBivHb&amp;dispatch=NX58Icd1YEuOglMQitJTA3Fxm&amp;flow=2RObaxidKf7A5D8I4unyGt1ME&amp;session=b0x7ChGdeI4n9w2FkDVrQPWNl",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 100,
+      "risk_level": "Phishing",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.facebook.com/people/Jay-Zeidel/100001493540580",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 9,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://gyhbiuo.ru/linuxsucks.php",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 62,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.manta.com/ic/mt6x2mc/ca/pouliot-caron-prevost-belisle-galarneau",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 6,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.traversecityfilmoffice.blogspot.com/",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 2,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.earlaustinjr.com/slu-basketball/3376.html",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 9,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://eawesono.com/mail.htm?cmd=lob=rbglogon&amp;amp...",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 52,
+      "risk_level": "Suspicious",
+      "layers_used": 8
+    },
+    {
+      "url": "http://www.iiporto.com/libraries/joomla/html/language/en-GB/index.php",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 52,
+      "risk_level": "Suspicious",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.tcm.com/tcmdb/person/12713|117943/Noah-Beery/",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 15,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://s-teamworld.com/files/resume/mails1/",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 52,
+      "risk_level": "Suspicious",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=Cnw5Wo1MS6I",
+      "true_label": 0,
+      "predicted_label": 1,
+      "final_score": 52,
+      "risk_level": "Suspicious",
+      "layers_used": 8
+    },
+    {
+      "url": "http://dropbox0.tk/index.php",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 78,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.ilike.com/artist/Lesbians+On+Ecstasy",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 12,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://tamplarie-lemnstratificat.ro/administrator/images/login",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 62,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.fightline.com/fl/news/2011/0924/544836/randy-couture/",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 15,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://mundoescolar.cl/sapo/file/",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 62,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "http://ibc14.com/.https/www/prod/fifatms.com/common/",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 85,
+      "risk_level": "Phishing",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.fanbase.com/Army-Black-Knights-Mens-Ice-Hockey-1975-76",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 4,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.bitsnoop.com/deftones-saturday-night-wrist-q14646633.html",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 9,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.fanpix.net/gallery/nora-denney-pictures.htm",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 6,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.pes-patch.com/2009/03/n-g-j-league-patch-2009-v1-by-kira.html",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 10,
+      "risk_level": "Safe",
+      "layers_used": 8
+    },
+    {
+      "url": "http://vimvivenci.com.br/skin/install/default/server/aol.index.htm",
+      "true_label": 1,
+      "predicted_label": 1,
+      "final_score": 62,
+      "risk_level": "High Risk",
+      "layers_used": 8
+    },
+    {
+      "url": "https://www.whosdatedwho.com/tpx_278280/melana-scantlin/",
+      "true_label": 0,
+      "predicted_label": 0,
+      "final_score": 9,
+      "risk_level": "Safe",
+      "layers_used": 8
+    }
+  ]
+}

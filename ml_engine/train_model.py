@@ -17,7 +17,8 @@ warnings.filterwarnings('ignore')
 import pandas as pd
 import numpy as np
 import joblib
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import (RandomForestClassifier, ExtraTreesClassifier,
+                               VotingClassifier)
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from sklearn.metrics import (accuracy_score, precision_score,
                               recall_score, f1_score,
@@ -30,6 +31,13 @@ try:
 except ImportError:
     HAS_SMOTE = False
     print("[!] Install imbalanced-learn for SMOTE: pip install imbalanced-learn")
+
+try:
+    from xgboost import XGBClassifier
+    HAS_XGB = True
+except ImportError:
+    HAS_XGB = False
+    print("[!] Install xgboost for ensemble boosting: pip install xgboost")
 
 # ── paths ────────────────────────────────────────────────────
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -193,8 +201,19 @@ def main():
     )
     print(f'  Train: {len(X_train):,}  |  Test: {len(X_test):,}')
 
-    # [6] Hyperparameter tuning (SIMPLIFIED)
-    print('[6] Tuning hyperparameters (15 iterations, 3-fold CV)...')
+    # [5b] SMOTE oversampling on the training set only — generates synthetic
+    # samples along feature-space neighbours, which is far more useful now
+    # that we have continuous features (entropy, ratios) instead of just
+    # ternary -1/0/1 flags, since SMOTE interpolation is meaningless on
+    # near-binary features but works well on continuous ones.
+    if HAS_SMOTE:
+        print('[5b] Applying SMOTE oversampling to training set...')
+        smote = SMOTE(random_state=42)
+        X_train, y_train = smote.fit_resample(X_train, y_train)
+        print(f'  After SMOTE: {len(X_train):,} samples, class distribution: {np.bincount(y_train)}')
+
+    # [6] Hyperparameter tuning for RandomForest
+    print('[6] Tuning RandomForest hyperparameters (15 iterations, 3-fold CV)...')
     param_grid = {
         'n_estimators': [100, 200, 300],
         'max_depth': [10, 20, 30],
@@ -209,8 +228,8 @@ def main():
     search = RandomizedSearchCV(
         rf_base,
         param_grid,
-        n_iter=15,  # Reduced from 30
-        cv=3,       # Reduced from 5
+        n_iter=15,
+        cv=3,
         scoring='f1',
         n_jobs=-1,
         verbose=1,
@@ -218,10 +237,34 @@ def main():
     )
 
     search.fit(X_train, y_train)
-    clf = search.best_estimator_
+    rf_clf = search.best_estimator_
 
-    print(f'  Best params: {search.best_params_}')
-    print(f'  Best CV F1 score: {search.best_score_:.4f}')
+    print(f'  Best RF params: {search.best_params_}')
+    print(f'  Best RF CV F1 score: {search.best_score_:.4f}')
+
+    # [6b] Build ensemble — RandomForest + ExtraTrees + XGBoost (soft voting).
+    # Each algorithm makes different mistakes (RF/ExtraTrees: bagged trees;
+    # XGBoost: sequential boosting correcting prior errors), so a soft-vote
+    # average smooths out individual model weaknesses on a single feature set.
+    print('[6b] Building voting ensemble (RandomForest + ExtraTrees + XGBoost)...')
+    et_clf = ExtraTreesClassifier(
+        n_estimators=300, max_depth=20, min_samples_split=2,
+        max_features='sqrt', random_state=42, n_jobs=-1
+    )
+
+    estimators = [('rf', rf_clf), ('et', et_clf)]
+
+    if HAS_XGB:
+        xgb_clf = XGBClassifier(
+            n_estimators=300, max_depth=6, learning_rate=0.05,
+            subsample=0.8, colsample_bytree=0.8,
+            eval_metric='logloss', random_state=42, n_jobs=-1
+        )
+        estimators.append(('xgb', xgb_clf))
+
+    clf = VotingClassifier(estimators=estimators, voting='soft', n_jobs=-1)
+    clf.fit(X_train, y_train)
+    print(f'  Ensemble trained with {len(estimators)} base models: {[name for name, _ in estimators]}')
 
     # [7] Evaluate
     print('[7] Evaluating on test set...')
@@ -244,9 +287,14 @@ def main():
     print(f'\n  Classification Report:')
     print(classification_report(y_test, y_pred, zero_division=0))
 
-    # [8] Feature importance
+    # [8] Feature importance — VotingClassifier has no feature_importances_ of
+    # its own, so average across the fitted sub-estimators that expose one.
     print('[8] Feature importance (top 10)...')
-    importances = clf.feature_importances_
+    sub_importances = [
+        est.feature_importances_ for est in clf.estimators_
+        if hasattr(est, 'feature_importances_')
+    ]
+    importances = np.mean(sub_importances, axis=0)
     important_indices = np.argsort(importances)[::-1][:10]
 
     print('  Top 10 features:')

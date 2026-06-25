@@ -30,8 +30,8 @@ The platform serves three primary use cases:
 - Ensure security hardening (CSRF, XSS, SSRF, rate limiting, IDOR prevention)
 
 ### Key Achievements
-- ✓ 95%+ accuracy on known threats (VT+GSB+ML consensus)
-- ✓ 85%+ accuracy on zero-day phishing (URL heuristics + ML)
+- ✓ **95% measured accuracy** on a 100-URL held-out test set, run end-to-end through the live production pipeline (VT+GSB+ML+rules+feeds+SSL+redirect+typosquatting) — 100% recall (zero phishing URLs missed), 90.91% precision, 95.24% F1. See "Full-System Evaluation" below for methodology.
+- ✓ 91.92% measured accuracy for the ML model in isolation (no network calls, <1s)
 - ✓ Explainable scoring with detailed breakdown for each scan
 - ✓ 8-second SLA per scan (all layers in parallel, 8s timeout per future)
 - ✓ Enterprise-grade security (rate limiting, CSRF, SSRF guards, audit trails)
@@ -50,8 +50,8 @@ The platform serves three primary use cases:
 | **Rate Limiting** | Flask-Limiter | DDoS/brute-force protection |
 | **Security** | Flask-Talisman | HTTPS enforcement, CSRF protection, CSP headers |
 | **Email** | Flask-Mail | Password reset, notifications |
-| **ML Model** | scikit-learn RandomForest | Phishing classification on lexical features |
-| **Feature Extraction** | Custom regex + regex engines | 30-feature URL analysis |
+| **ML Model** | scikit-learn (RandomForest + ExtraTrees + XGBoost voting ensemble) + imbalanced-learn (SMOTE) | Phishing classification on lexical features |
+| **Feature Extraction** | Custom regex + entropy/similarity engines | 43-feature URL analysis |
 | **Threat Intelligence** | VirusTotal, Google Safe Browsing, URLhaus, OpenPhish, URLvoid | External API integrations |
 | **Frontend** | Jinja2 + Bootstrap 5 | Template rendering, responsive UI |
 | **Templating** | Jinja2 | Dynamic HTML rendering |
@@ -194,7 +194,7 @@ vt_detections (Integer)
 vt_total_engines (Integer)
 gsb_threat_type (String)
 domain_age (Integer, days)
-features_json (JSON, 30-feature vector)
+features_json (JSON, 43-feature vector)
 explanation_json (JSON, layer-by-layer breakdown)
 recommendation (Text)
 scanned_at (DateTime)
@@ -406,7 +406,7 @@ project/
 │
 ├── ml_engine/
 │   ├── __init__.py
-│   ├── feature_extractor.py    # 30-feature lexical URL vector
+│   ├── feature_extractor.py    # 43-feature lexical URL vector
 │   │   └── Features: length, entropy, domain age, subdomain count, port, path depth, 
 │   │       query params, special chars, digit ratio, alphanumeric ratio, vowel ratio,
 │   │       homoglyphs, suspicious keywords, etc.
@@ -505,12 +505,48 @@ with ThreadPoolExecutor(max_workers=8) as executor:
 - Returns full layer breakdown for explainability
 
 ### ML Model Details
-- **Algorithm**: scikit-learn RandomForest (100 estimators)
-- **Features**: 30-feature lexical vector (fast=True mode)
-- **Training Data**: ~450k labeled URLs (50/50 legitimate vs phishing)
-- **Accuracy**: ~93% on test set (trained on lexical features only to match inference distribution)
+- **Algorithm**: Soft-voting ensemble — RandomForest + ExtraTrees + XGBoost (3 base classifiers), combined via `sklearn.ensemble.VotingClassifier`
+- **Class balancing**: SMOTE (Synthetic Minority Oversampling) applied to the training split only, never to the held-out test set
+- **Features**: 43-feature lexical vector (fast=True mode) — the original 30 CTU/PhishTank-style features plus 13 enriched lexical features added to fix feature impoverishment (see "Why an ensemble + enrichment" below)
+- **Training Data**: 30,000 URLs balanced-sampled (15,000 legitimate + 15,000 phishing) from a ~450k-row labeled dataset
+- **Accuracy**: 91.92% on held-out test set (actual measured result — see Model Evolution below)
+- **Precision**: 94.32% | **Recall**: 89.20% | **F1 Score**: 91.69%
 - **Inference Time**: <1 second (no network calls, instant prediction)
-- **File**: `phishing_model.pkl` (committed to repo, ~2MB)
+- **File**: `phishing_model.pkl` (committed to repo)
+
+#### Model Evolution — why the numbers changed
+The model was first trained on the original 30-feature set using a single tuned RandomForest. In `fast=True` mode (used for instant inference, no network calls), only **9 of those 30 features actually vary** — the rest (SSL state, domain age, WHOIS data, page content, DNS, traffic rank, etc.) depend on network calls that are skipped for speed and default to constant placeholder values. With only 9 informative features, that first model measured:
+
+| Metric | First model (30 features, single RF) | Final model (43 features, SMOTE + ensemble) |
+|---|---|---|
+| Accuracy | 60.90% | **91.92%** |
+| Precision | 58.15% | **94.32%** |
+| Recall | 77.73% | **89.20%** |
+| F1 Score | 66.53% | **91.69%** |
+
+The root cause was feature impoverishment, not the algorithm — an ensemble alone could not have closed that gap. The fix added 13 new **zero-network-call** lexical features computed directly from the URL string: Shannon entropy (URL and domain), digit ratio, special-character/hyphen/dot counts, path depth, query parameter count, suspicious-keyword count, brand-impersonation similarity (Levenshtein distance to 30 major brand names), suspicious-TLD flag, punycode flag, and vowel ratio. These features are informative for every URL (no network dependency), which gave the model far more real signal to learn from. SMOTE oversampling and the 3-model voting ensemble were then layered on top for the final accuracy gain.
+
+One bug surfaced and was fixed during this work: the brand-similarity feature initially scored an *exact* match to a brand name (e.g. `google.com` itself) as maximum similarity (1.0), which falsely flagged legitimate brand sites as "impersonating themselves." The fix excludes exact label matches from the similarity score — only near-misses (e.g. `paypa1`, `g00gle`) count as impersonation. The model was retrained after this fix; accuracy moved from 91.97% to 91.92% (a negligible change), confirming the bug had no meaningful effect on aggregate metrics while removing a real false-positive source.
+
+### Full-System Evaluation (ML + VT + GSB + Rules + Feeds + SSL + Redirect + Typosquatting)
+
+The 91.92% figure above measures the ML model **in isolation**. The system's actual deployed behaviour combines 8 layers via `compute_final_risk_score()`, so a separate end-to-end evaluation was built (`ml_engine/evaluate_system.py`) to measure the real, combined pipeline rather than relying on the original theoretical weight-distribution estimate ("95%+ on known threats") that had never been empirically tested.
+
+**Methodology**: 100 URLs (50 legitimate + 50 phishing) were randomly sampled from the labeled dataset, explicitly **excluded** from the rows used to train the ML model (same seed/sampling logic replicated to compute the exclusion set, so this is a genuine held-out test, not data the model — or the system — had already seen). Each URL was run through the actual production code path: live VirusTotal and Google Safe Browsing API calls, the URL heuristics engine, threat-feed lookups (URLhaus/OpenPhish), SSL/redirect/typosquatting checks, and the ML model, combined by the real scoring engine — not a simulation.
+
+**Result**:
+
+| Metric | Value |
+|---|---|
+| Accuracy | **95.00%** |
+| Precision | 90.91% |
+| Recall | **100.00%** (zero phishing URLs missed) |
+| F1 Score | 95.24% |
+| Confusion Matrix | TN=45, FP=5, FN=0, TP=50 |
+
+This empirically confirms the "95%+ accuracy on known threats" claim made earlier in this document — it is no longer a theoretical estimate, it is a measured result. Notably, **recall was 100%**: every phishing URL in the test set was caught. All 5 errors were false positives (legitimate URLs scored "Suspicious," never "High Risk" or "Phishing"), all on pages with unusually deep paths or long query strings (obituary/genealogy/video-platform URLs) that trip the URL-heuristics layer — a defensible, explainable failure mode rather than a random one. This evaluation also surfaced a real production bug (see "Known Limitations" — the OS certificate trust issue), which was fixed before this number was measured.
+
+**Caveat for the thesis**: 100 URLs is a modest sample size, constrained by VirusTotal's free-tier rate limit (~4 requests/minute), not by methodology choice. State this limitation explicitly if asked to defend the sample size — it is standard practice when an evaluation depends on rate-limited third-party APIs.
 
 ### Heuristic Floor Enforcement
 ```python
@@ -615,6 +651,43 @@ accuracy = min(97, max(40, int(acc)))
 - ✓ Commit pushed: `Update scoring weights and comprehensive documentation`
 - ✓ All files syntax-checked and tested
 - ✓ System verified production-ready
+
+---
+
+## Recent Changes (Session: June 17, 2026)
+
+### ML Model Accuracy Improvement (60.90% → 91.92%)
+**Why**: The first real training run measured only 60.90% accuracy / 66.53% F1 — far below the 90%+ target. Investigation traced the cause to feature impoverishment: in `fast=True` inference mode (required to keep scans under 10 seconds with no network calls), only 9 of the original 30 features actually varied; the rest defaulted to constants because they depended on WHOIS/SSL/page-fetch/DNS/traffic-rank lookups that are skipped for speed.
+
+**Change** (see "Model Evolution" under ML Model Details above for full metric comparison):
+1. Added 13 new zero-network-call lexical features to `feature_extractor.py`: URL/domain Shannon entropy, digit ratio, special-char/hyphen/dot counts, path depth, query param count, suspicious-keyword count, brand-impersonation similarity (Levenshtein), suspicious-TLD flag, punycode flag, vowel ratio. Total feature count: 30 → 43.
+2. Rebuilt `train_model.py` to apply SMOTE oversampling to the training split (never the test split) and replaced the single tuned RandomForest with a soft-voting ensemble of RandomForest + ExtraTrees + XGBoost (`sklearn.ensemble.VotingClassifier`).
+3. Fixed a brand-similarity bug where exact brand-name matches (e.g. `google.com`) scored maximum similarity (1.0), falsely flagging legitimate sites as impersonating themselves; excluded exact matches from the similarity score and retrained.
+4. Updated `predictor.py`'s feature label/explanation/severity dictionaries and `feature_extractor.py`'s `FEATURE_THRESHOLDS` so all 13 new features surface correctly in the scan-result explanation UI instead of silently defaulting to "pass".
+
+**Impact**: 91.92% accuracy, 94.32% precision, 89.20% recall, 91.69% F1 — measured on a held-out test set, inference still completes in under 1 second with zero network calls.
+
+### Full-System Evaluation Built + a Real Production Bug Fixed
+**Why**: the "95%+ accuracy on known threats" claim for the combined 8-layer system had never actually been measured — it was a theoretical estimate from the original weight-recommendation analysis. A thesis result needs evidence, not an estimate.
+
+**What happened**: building `ml_engine/evaluate_system.py` (runs real URLs through the actual production pipeline, VT/GSB live API calls included) surfaced a serious, pre-existing bug: this development machine has a system-wide TLS trust issue (something — likely local security software — performs HTTPS interception with a root CA trusted by Windows' own certificate store but not by Python's bundled `certifi` CA list). This caused `requests`-based calls to VirusTotal, Google Safe Browsing, and the OpenPhish threat feed to **silently fail and report "clean"/"no detections"** instead of raising a visible error — a false-negative bias affecting roughly 50% of the scoring weight (VT 30% + GSB 20%) on every real scan made from this machine.
+
+**Fix**: installed `truststore` and called `truststore.inject_into_ssl()` at the top of `app.py` (and the evaluation script), which delegates TLS verification to the OS certificate store instead of only `certifi`'s bundled list. Verified fixed: a smoke test with this fix showed known phishing URLs jump from "Low Risk" (score ~23) to "High Risk" (score ~70) once VT/GSB started returning real data again.
+
+**Impact**: confirmed the full-system result — 95.00% accuracy, 90.91% precision, 100% recall, 95.24% F1 (see "Full-System Evaluation" under ML Model Details above). Also worth noting for the thesis: this bug was local-machine-specific (likely caused by antivirus/security software TLS interception) and would not affect the Render-hosted deployment, which runs in a clean Linux container without that interception layer.
+
+---
+
+## Recent Changes (Session: June 25, 2026)
+
+### Unresolvable URL Shortener Blind Spot — Found and Fixed
+**Why**: a real scan of `https://t.co/nce4apnMW5` (Scan #64) was flagged only "Low Risk" (score 24) despite being a suspicious shortened link. This was a real-world bug report, not a hypothetical — investigated using the same direct-pipeline diagnostic approach as the evaluation script.
+
+**Root cause**: `t.co` (Twitter/X's shortener) does not resolve via DNS on this network at all — confirmed independently with a plain OS-level `nslookup t.co` (`Non-existent domain`), so this wasn't a code bug in the redirect-following logic itself. When the redirect chain can't be resolved, VirusTotal, Google Safe Browsing, and the URL-heuristics layer all end up grading the *literal* short link — which looks clean by design, since the point of a shortener is to hide the destination. Only the ML model caught it: tested in isolation, it scored the same URL 99/100 "Dangerous" via the `Shortining_Service` feature. But ML carries only 25% of the final weighted score, so the other clean-looking layers diluted it down to 24.
+
+**Fix**: added a new override rule to `scoring_engine.py` (`compute_final_risk_score`) — if the URL's domain is a known shortener (`t.co`, `bit.ly`, `tinyurl.com`, etc., the same list `feature_extractor.py` already uses for the `Shortining_Service` feature) **and** the redirect-chain layer reports zero hops (couldn't resolve it), the score is floored at 41 ("Suspicious"). Verified the fix doesn't over-trigger: a real, working TinyURL link created live (`tinyurl.com/buf3qt3 → wikipedia.org`) correctly resolved its redirect chain and was **not** floored (scored 28, Low Risk, no override) — only genuinely unresolvable shorteners get the floor.
+
+**Impact**: closes a real blind spot where a malicious shortened link with an unreachable/blocked destination would previously score artificially low. Good thesis material: demonstrates a methodology of finding bugs through direct pipeline diagnosis (bypassing the UI to call each scoring layer independently) rather than just trusting the aggregate score.
 
 ---
 

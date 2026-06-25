@@ -54,6 +54,19 @@ _SUSPICIOUS_TLDS = {
     '.mov', '.icu', '.ru', '.su', '.cc', '.bz',
 }
 
+# Same shortener list as feature_extractor.py's Shortining_Service feature.
+# Used here to catch the case where a shortener's true destination couldn't be
+# resolved (DNS failure, blocked redirect, etc.) — at that point VT/GSB/rules
+# are all grading the literal short link, which is clean-looking by design,
+# and only the ML layer (25% weight) sees the shortener pattern. An
+# unresolvable shortener means zero visibility into the real destination,
+# which is itself a risk signal that deserves an explicit floor.
+_SHORTENER_DOMAINS = {
+    'bit.ly', 'tinyurl.com', 't.co', 'goo.gl', 'ow.ly',
+    'buff.ly', 'is.gd', 'rb.gy', 'short.link', 'cutt.ly',
+    'shorte.st', 'adf.ly', 'tiny.cc', 'clck.ru',
+}
+
 
 def _url_heuristic_score(url: str) -> dict:
     """
@@ -473,6 +486,24 @@ def compute_final_risk_score(analysis_results):
             override_applied = True
             flags_summary = ', '.join(heuristic_layer.get('flags', [])[:2])
             override_reason = f'URL Heuristics: {flags_summary}'
+
+    # Override 7: Unresolvable URL shortener — if the domain is a known
+    # shortener and the redirect chain has zero hops (couldn't resolve/expand
+    # it), every other layer is grading the literal short link instead of its
+    # real destination. Zero visibility into where it actually goes is itself
+    # a risk signal, not a neutral one.
+    if raw_url:
+        try:
+            shortener_domain = urlparse(raw_url if '://' in raw_url else 'http://' + raw_url).netloc.lower()
+        except Exception:
+            shortener_domain = ''
+        if shortener_domain in _SHORTENER_DOMAINS:
+            redirect_data_check = analysis_results.get('redirect_analysis') or {}
+            if redirect_data_check.get('redirect_count', 0) == 0:
+                weighted_score = max(weighted_score, 41)
+                override_applied = True
+                override_reason = (override_reason or
+                                   f'URL shortener ({shortener_domain}) could not be resolved — true destination unknown')
 
     # ── Strictness rule: 3+ heuristic flags → NEVER Safe or Low Risk ──
     heuristic_flags_list = layer_breakdown.get('url_heuristics', {}).get('flags', [])
